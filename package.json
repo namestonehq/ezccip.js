@@ -28,12 +28,12 @@
 	],
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/resolverworks/ezccip.js.git"
+		"url": "git+https://github.com/namestonehq/ezccip.js.git"
 	},
 	"bugs": {
-		"url": "https://github.com/resolverworks/ezccip.js/issues"
+		"url": "https://github.com/namestonehq/ezccip.js/issues"
 	},
-	"homepage": "https://github.com/resolverworks/ezccip.js#readme",
+	"homepage": "https://github.com/namestonehq/ezccip.js#readme",
 	"author": "raffy.eth",
 	"license": "MIT",
 	"description": "Turnkey CCIP-Read Handler",
