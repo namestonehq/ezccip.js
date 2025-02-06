@@ -753,8 +753,24 @@ data_btn.addEventListener('click', () => {
 		if (func_select.value === FUNC_ABI) {
 			add_tag(row, create_tag('Signature', abi_func.format(), 'code'));
 			add_tag(row, create_tag('Inputs', abi_func.inputs.length));
+		} else if (func_select.value === FUNC_ENSIP10) {
+			add_tag(row, create_tag('Normalized', name_norm, 'code'));
+			add_tag(row, create_tag('Namehash', create_copy_btn(ethers.namehash(name_norm)), 'code'));
+			add_tag(row, create_tag('DNS-Encoded', create_copy_btn(name_dns), 'code'));
 		}
 		output_div.append(row, create_pre(make_calldata(), true, row, Infinity));
+		if (func_select.value === FUNC_ENSIP10) {
+			let profile = parse_profile();
+			let calls = profile.makeGetters({name: name_norm});
+			for (let i = 0; i < calls.length; i++) {
+				let call = ethers.hexlify(calls[i]);
+				let row = create_log({time: `#${i+1}`});
+				let {name, args: [_, arg], selector} = ENSIP10_ABI.parseTransaction({data: call});
+				add_tag(row, create('span', {className: 'tag record', dataset: {name}, innerHTML: `${name}(${arg ?? ''})`}));
+				
+				output_div.append(row, create_pre(call, true, row, Infinity));
+			}
+		}
 	} catch (err) {
 		append_error(err);
 	}
