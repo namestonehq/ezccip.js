@@ -1,4 +1,5 @@
-import { EZCCIP, RecordFunction, EZCCIPConfig, HexString } from "./index.js";
+import { EZCCIP, RecordFunction, EZCCIPConfig, HexString, } from "./index.js";
+import { SigningKey } from "ethers/crypto";
 import { Server } from "node:http";
 
 export function serve(
@@ -8,6 +9,7 @@ export function serve(
 		formatError?: (error: Error) => any;
 		port?: number; // default random open
 		parseOrigin?: (path: string) => HexString;
+		signingKey?: SigningKey | HexString;
 		// this also supplies: { url, ip }
 	} & EZCCIPConfig
 ): Promise<

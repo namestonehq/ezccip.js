@@ -149,32 +149,20 @@ export class EZCCIP {
     });
   }
   // https://eips.ethereum.org/EIPS/eip-3668
-  async handleRead(
-    sender,
-    calldata,
-    {
-      protocol = "tor",
-      signingKey,
-      origin,
-      recursionLimit = 2,
-      ttlSec = 60,
-      ...context
-    }
-  ) {
+  async handleRead(sender, calldata, context = {}) {
     if (!isHexString(sender) || sender.length !== 42)
       throw error_with("expected sender address", { status: 400 });
     if (!isHexString(calldata) || calldata.length < 10)
       throw error_with("expected calldata", { status: 400 });
-    const history = new History(recursionLimit);
+    const history = new History(context.recursionLimit ?? 2);
     context.sender = getAddress(sender);
     context.calldata = calldata = calldata.toLowerCase();
-    context.origin = origin ? getAddress(origin) : context.sender; // origin can be modified by the callback
-    context.protocol = protocol; // protocol be modified by the callback
+    context.origin = context.origin ? getAddress(context.origin) : context.sender; // origin can be modified by the callback
     context.history = history;
     const response = await this.handleCall(calldata, context, history);
-    let data;
-    const expires = Math.floor(Date.now() / 1000) + ttlSec;
-    switch (context.protocol) {
+	let data;
+    const expires = Math.floor(Date.now() / 1000) + (context.ttlSec ?? 60);
+    switch (context.protocol ?? "tor") {
       case "raw": {
         data = response;
         break;
@@ -193,7 +181,7 @@ export class EZCCIP {
         );
         data = ABI_CODER.encode(
           ["bytes", "uint64", "bytes"],
-          [response, expires, signingKey.sign(hash).serialized]
+          [response, expires, context.signingKey.sign(hash).serialized]
         );
         break;
       }
@@ -205,7 +193,7 @@ export class EZCCIP {
         );
         data = ABI_CODER.encode(
           ["bytes", "uint64", "bytes"],
-          [signingKey.sign(hash).serialized, expires, response]
+          [context.signingKey.sign(hash).serialized, expires, response]
         );
         break;
       }

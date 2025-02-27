@@ -85,6 +85,7 @@ ezccip.register(abi, {
   async ["0xe2179b8e"]([a, b], context) {
     // match by selector
     context.protocol = "tor"; // override signing protocol
+    context.signingKey = ...; // override signing key
     return ethers.toBeHex(1337n, 32); // return raw encoded result
   },
 });

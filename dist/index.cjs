@@ -17,8 +17,8 @@ var __copyProps = (to, from, except, desc) => {
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
 // src/index.js
-var src_exports = {};
-__export(src_exports, {
+var index_exports = {};
+__export(index_exports, {
   EZCCIP: () => EZCCIP,
   History: () => History,
   RESOLVE_ABI: () => RESOLVE_ABI,
@@ -27,7 +27,7 @@ __export(src_exports, {
   labels_from_dns_encoded: () => labels_from_dns_encoded,
   processENSIP10: () => processENSIP10
 });
-module.exports = __toCommonJS(src_exports);
+module.exports = __toCommonJS(index_exports);
 
 // src/utils.js
 var import_utils = require("ethers/utils");
@@ -200,28 +200,20 @@ var EZCCIP = class {
     });
   }
   // https://eips.ethereum.org/EIPS/eip-3668
-  async handleRead(sender, calldata, {
-    protocol = "tor",
-    signingKey,
-    origin,
-    recursionLimit = 2,
-    ttlSec = 60,
-    ...context
-  }) {
+  async handleRead(sender, calldata, context = {}) {
     if (!(0, import_utils3.isHexString)(sender) || sender.length !== 42)
       throw error_with("expected sender address", { status: 400 });
     if (!(0, import_utils3.isHexString)(calldata) || calldata.length < 10)
       throw error_with("expected calldata", { status: 400 });
-    const history = new History(recursionLimit);
+    const history = new History(context.recursionLimit ?? 2);
     context.sender = (0, import_address.getAddress)(sender);
     context.calldata = calldata = calldata.toLowerCase();
-    context.origin = origin ? (0, import_address.getAddress)(origin) : context.sender;
-    context.protocol = protocol;
+    context.origin = context.origin ? (0, import_address.getAddress)(context.origin) : context.sender;
     context.history = history;
     const response = await this.handleCall(calldata, context, history);
     let data;
-    const expires = Math.floor(Date.now() / 1e3) + ttlSec;
-    switch (context.protocol) {
+    const expires = Math.floor(Date.now() / 1e3) + (context.ttlSec ?? 60);
+    switch (context.protocol ?? "tor") {
       case "raw": {
         data = response;
         break;
@@ -239,7 +231,7 @@ var EZCCIP = class {
         );
         data = ABI_CODER.encode(
           ["bytes", "uint64", "bytes"],
-          [response, expires, signingKey.sign(hash).serialized]
+          [response, expires, context.signingKey.sign(hash).serialized]
         );
         break;
       }
@@ -250,7 +242,7 @@ var EZCCIP = class {
         );
         data = ABI_CODER.encode(
           ["bytes", "uint64", "bytes"],
-          [signingKey.sign(hash).serialized, expires, response]
+          [context.signingKey.sign(hash).serialized, expires, response]
         );
         break;
       }

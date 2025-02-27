@@ -46,6 +46,7 @@ type CallContext = {
 	sender: HexString;
 	calldata: HexString;
 	protocol: SigningProtocol;
+	signingKey: SigningKey;
 	history: History;
 } & CallContextExtra;
 
@@ -68,7 +69,7 @@ type RecordFunction = (
 type EZCCIPConfig = {
 	origin?: HexString;
 	protocol?: SigningProtocol;
-	signingKey?: SigningKey | HexString;
+	signingKey?: SigningKey;
 	ttlSec?: number;
 	recursionLimit?: number;
 } & CallContextExtra;
