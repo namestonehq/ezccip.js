@@ -91,8 +91,11 @@ export class EZCCIP {
 export function processENSIP10(
 	record: Record | undefined,
 	calldata: HexString,
-	multicall?: boolean,
-	history?: History
+	options?: {
+		multicall?: boolean,
+		defaultAddress?: boolean;
+		history?: History,
+	}
 ): HexString;
 
 export function asciiize(s: string): string;

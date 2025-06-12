@@ -1543,7 +1543,7 @@ function parse_field(f) {
 		//if (arg.startsWith('"') && arg.endsWith('"')) arg = arg.slice(1, -1);
 		return {type, arg, error: !arg.length};
 	} else if (type === TYPE_ADDR) {
-		arg_field.placeholder = 'coinType • $abbr • <empty>';
+		arg_field.placeholder = 'coinType evm:$chain • $abbr • <empty>';
 		try {
 			parse_coin(arg);
 			return {type, arg};
@@ -1597,6 +1597,8 @@ function parse_coin(s) {
 		return;
 	} else if (s.startsWith('$')) {
 		return Coin.fromName(s.slice(1));
+	} else if (/^evm:(0x)?[0-9a-f]+$/i.test(s)) {
+		return Coin.fromChain(BigInt(s.slice(4)));
 	} else if (/^(0x)?[0-9a-f]+$/i.test(s)) {
 		return Coin.fromType(BigInt(s));
 	} else {
