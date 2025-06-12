@@ -74,8 +74,13 @@ type EZCCIPConfig = {
 	recursionLimit?: number;
 } & CallContextExtra;
 
+type ENSIP10Options = {
+	multicall?: boolean;
+	defaultAddress?: boolean;
+};
+
 export class EZCCIP {
-	enableENSIP10(get: RecordFunction, options?: { multicall?: boolean }): void;
+	enableENSIP10(get: RecordFunction, options?: ENSIP10Options): void;
 	register(
 		abi: string | string[] | Interface,
 		impl: CCIPReadFunction | { [name: string]: CCIPReadFunction }
@@ -91,11 +96,8 @@ export class EZCCIP {
 export function processENSIP10(
 	record: Record | undefined,
 	calldata: HexString,
-	options?: {
-		multicall?: boolean,
-		defaultAddress?: boolean;
-		history?: History,
-	}
+	options?: ENSIP10Options,
+	history?: History
 ): HexString;
 
 export function asciiize(s: string): string;
