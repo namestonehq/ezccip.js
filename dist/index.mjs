@@ -307,7 +307,8 @@ async function processENSIP10(record, calldata, { multicall = true, defaultAddre
       case "hasAddr(bytes32,uint256)": {
         if (history) history.show = [addr_type_str(args.type)];
         let value = await record?.addr?.(args.type);
-        return !!value;
+        res = !!value;
+        break;
       }
       case "text(bytes32,string)": {
         let value = await record?.text?.(args.key);

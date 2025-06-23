@@ -295,7 +295,8 @@ export async function processENSIP10(
       case "hasAddr(bytes32,uint256)": {
         if (history) history.show = [addr_type_str(args.type)];
         let value = await record?.addr?.(args.type);
-        return !!value;
+        res = !!value;
+        break;
       }
       case "text(bytes32,string)": {
         // https://eips.ethereum.org/EIPS/eip-634
