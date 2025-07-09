@@ -1543,7 +1543,7 @@ function parse_field(f) {
 		//if (arg.startsWith('"') && arg.endsWith('"')) arg = arg.slice(1, -1);
 		return {type, arg, error: !arg.length};
 	} else if (type === TYPE_ADDR) {
-		arg_field.placeholder = 'coinType evm:$chain • $abbr • <empty>';
+		arg_field.placeholder = 'coinType • evm:$chain • $abbr • <empty>';
 		try {
 			parse_coin(arg);
 			return {type, arg};
