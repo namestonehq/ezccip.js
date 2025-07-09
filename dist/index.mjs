@@ -129,7 +129,7 @@ var EZCCIP = class {
     );
   }
   findHandler(key) {
-    if (/^0x[0-9a-f]{8}$/.test(key)) {
+    if (/^0x[0-9a-f]{8}$/i.test(key)) {
       return this.impls.get(key.toLowerCase());
     } else if (key instanceof FunctionFragment) {
       return this.impls.get(key.selector);
@@ -286,7 +286,7 @@ async function processENSIP10(record, calldata, { multicall = true, defaultAddre
         break;
       }
       case "addr(bytes32)": {
-        let value = await record?.addr?.(60n);
+        let value = await record?.addr?.(COIN_TYPE_ETH);
         if (defaultAddress && !value) {
           value = await record?.addr?.(COIN_TYPE_DEFAULT);
         }

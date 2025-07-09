@@ -1,4 +1,4 @@
-import { labels_from_dns_encoded, error_with, asciiize, chain_from_coin_type, COIN_TYPE_DEFAULT } from "./utils.js";
+import { labels_from_dns_encoded, error_with, asciiize, chain_from_coin_type, COIN_TYPE_DEFAULT, COIN_TYPE_ETH } from "./utils.js";
 
 // direct imports to reduce serverless load
 import { AbiCoder, Interface, FunctionFragment } from "ethers/abi";
@@ -102,7 +102,7 @@ export class EZCCIP {
     );
   }
   findHandler(key) {
-    if (/^0x[0-9a-f]{8}$/.test(key)) {
+    if (/^0x[0-9a-f]{8}$/i.test(key)) {
       return this.impls.get(key.toLowerCase());
     } else if (key instanceof FunctionFragment) {
       return this.impls.get(key.selector);
@@ -273,7 +273,7 @@ export async function processENSIP10(
       }
       case "addr(bytes32)": {
         // https://eips.ethereum.org/EIPS/eip-137
-        let value = await record?.addr?.(60n);
+        let value = await record?.addr?.(COIN_TYPE_ETH);
         if (defaultAddress && !value) {
           value = await record?.addr?.(COIN_TYPE_DEFAULT);
         }
