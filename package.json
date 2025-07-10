@@ -1,6 +1,6 @@
 {
 	"name": "@namestone/ezccip",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"type": "module",
 	"scripts": {
 		"test": "node test/all.js",
@@ -11,7 +11,7 @@
 		"ethers": "^6.13.4"
 	},
 	"devDependencies": {
-		"esbuild": "^0.24.0"
+		"esbuild": "^0.25.5"
 	},
 	"exports": {
 		".": {

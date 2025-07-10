@@ -458,9 +458,9 @@ footer {
 	<button data-config='{
 		"endpoint": "https://dnssec-oracle.ens.domains/",
 		"abi": "function resolve(bytes memory name, uint16 qtype) returns ((bytes, bytes)[] memory rrs)",
-		"args": ["0x076272616e746c7905726f636b7300", "16"],
+		"args": ["0x0a616e746973747570696403636f6d00", "16"],
 		"proto": "raw"
-	}'>OffchainDNSOracle &rarr; <code>brantly.rocks</code></button>
+	}'>OffchainDNSOracle &rarr; <code>antistupid.com</code></button>
 	<button data-config='{
 		"endpoint": "https://ccip-v2.ens.xyz",
 		"batches": [{
@@ -1543,7 +1543,7 @@ function parse_field(f) {
 		//if (arg.startsWith('"') && arg.endsWith('"')) arg = arg.slice(1, -1);
 		return {type, arg, error: !arg.length};
 	} else if (type === TYPE_ADDR) {
-		arg_field.placeholder = 'coinType • $abbr • <empty>';
+		arg_field.placeholder = 'coinType • evm:$chain • $abbr • <empty>';
 		try {
 			parse_coin(arg);
 			return {type, arg};
@@ -1597,6 +1597,8 @@ function parse_coin(s) {
 		return;
 	} else if (s.startsWith('$')) {
 		return Coin.fromName(s.slice(1));
+	} else if (/^evm:(0x)?[0-9a-f]+$/i.test(s)) {
+		return Coin.fromChain(BigInt(s.slice(4)));
 	} else if (/^(0x)?[0-9a-f]+$/i.test(s)) {
 		return Coin.fromType(BigInt(s));
 	} else {

@@ -19,10 +19,13 @@ var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: tru
 // src/index.js
 var index_exports = {};
 __export(index_exports, {
+  COIN_TYPE_DEFAULT: () => COIN_TYPE_DEFAULT,
+  COIN_TYPE_ETH: () => COIN_TYPE_ETH,
   EZCCIP: () => EZCCIP,
   History: () => History,
   RESOLVE_ABI: () => RESOLVE_ABI,
   asciiize: () => asciiize,
+  chain_from_coin_type: () => chain_from_coin_type,
   error_with: () => error_with,
   labels_from_dns_encoded: () => labels_from_dns_encoded,
   processENSIP10: () => processENSIP10
@@ -31,6 +34,13 @@ module.exports = __toCommonJS(index_exports);
 
 // src/utils.js
 var import_utils = require("ethers/utils");
+var COIN_TYPE_ETH = 60n;
+var COIN_TYPE_DEFAULT = 0x80000000n;
+function chain_from_coin_type(coinType) {
+  if (coinType == 60n) return 1;
+  coinType ^= COIN_TYPE_DEFAULT;
+  return coinType >= 0 && coinType < COIN_TYPE_DEFAULT ? Number(coinType) : 0;
+}
 function error_with(message, params, cause) {
   let error;
   if (cause) {
@@ -114,6 +124,7 @@ var RESOLVE_ABI = new import_abi.Interface([
   "function name(bytes32 node) external view returns (string)",
   "function addr(bytes32 node) external view returns (address)",
   "function addr(bytes32 node, uint256 type) external view returns (bytes)",
+  "function hasAddr(bytes32 node, uint256 type) external view returns (bool)",
   "function text(bytes32 node, string key) external view returns (string)",
   "function contenthash(bytes32 node) external view returns (bytes)",
   "function pubkey(bytes32 node) external view returns (uint256 x, uint256 y)",
@@ -138,7 +149,7 @@ var EZCCIP = class {
       }
     );
   }
-  enableENSIP10(get, { multicall = true } = {}) {
+  enableENSIP10(get, options = {}) {
     this.register(
       "resolve(bytes, bytes) external view returns (bytes)",
       async ([dnsname, data], context, history) => {
@@ -147,12 +158,12 @@ var EZCCIP = class {
         history.show = [name];
         let record = await get(name, context, history);
         if (record) history.record = record;
-        return processENSIP10(record, data, multicall, history.then());
+        return processENSIP10(record, data, options, history.then());
       }
     );
   }
   findHandler(key) {
-    if (/^0x[0-9a-f]{8}$/.test(key)) {
+    if (/^0x[0-9a-f]{8}$/i.test(key)) {
       return this.impls.get(key.toLowerCase());
     } else if (key instanceof import_abi.FunctionFragment) {
       return this.impls.get(key.selector);
@@ -277,13 +288,14 @@ var EZCCIP = class {
     }
   }
 };
-async function processENSIP10(record, calldata, multicall = true, history) {
+async function processENSIP10(record, calldata, { multicall = true, defaultAddress = true } = {}, history) {
   try {
     if (history) history.calldata = calldata;
     let method = calldata.slice(0, 10);
     let frag = RESOLVE_ABI.getFunction(method);
-    if (!frag || !multicall && frag.name === MULTICALL)
+    if (!frag || !multicall && frag.name === MULTICALL) {
       throw error_with(`unsupported resolve() method: ${method}`, { calldata });
+    }
     if (history) {
       history.name = frag.name;
     }
@@ -299,7 +311,7 @@ async function processENSIP10(record, calldata, multicall = true, history) {
         res = [
           await Promise.all(
             args.calls.map(
-              (x) => processENSIP10(record, x, true, history?.enter()).catch(
+              (x) => processENSIP10(record, x, { multicall, defaultAddress }, history?.enter()).catch(
                 encode_error
               )
             )
@@ -308,7 +320,10 @@ async function processENSIP10(record, calldata, multicall = true, history) {
         break;
       }
       case "addr(bytes32)": {
-        let value = await record?.addr?.(60n);
+        let value = await record?.addr?.(COIN_TYPE_ETH);
+        if (defaultAddress && !value) {
+          value = await record?.addr?.(COIN_TYPE_DEFAULT);
+        }
         res = [
           "0x" + (value ? (0, import_utils3.hexlify)(value).slice(2, 42) : "").padStart(40, "0")
         ];
@@ -317,7 +332,16 @@ async function processENSIP10(record, calldata, multicall = true, history) {
       case "addr(bytes32,uint256)": {
         if (history) history.show = [addr_type_str(args.type)];
         let value = await record?.addr?.(args.type);
+        if (defaultAddress && !value && chain_from_coin_type(args.type)) {
+          value = await record?.addr?.(COIN_TYPE_DEFAULT);
+        }
         res = [value || "0x"];
+        break;
+      }
+      case "hasAddr(bytes32,uint256)": {
+        if (history) history.show = [addr_type_str(args.type)];
+        let value = await record?.addr?.(args.type);
+        res = !!value;
         break;
       }
       case "text(bytes32,string)": {

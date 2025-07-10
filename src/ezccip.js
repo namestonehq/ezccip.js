@@ -1,4 +1,4 @@
-import { labels_from_dns_encoded, error_with, asciiize } from "./utils.js";
+import { labels_from_dns_encoded, error_with, asciiize, chain_from_coin_type, COIN_TYPE_DEFAULT, COIN_TYPE_ETH } from "./utils.js";
 
 // direct imports to reduce serverless load
 import { AbiCoder, Interface, FunctionFragment } from "ethers/abi";
@@ -55,6 +55,7 @@ export const RESOLVE_ABI = new Interface([
   "function name(bytes32 node) external view returns (string)",
   "function addr(bytes32 node) external view returns (address)",
   "function addr(bytes32 node, uint256 type) external view returns (bytes)",
+  "function hasAddr(bytes32 node, uint256 type) external view returns (bool)",
   "function text(bytes32 node, string key) external view returns (string)",
   "function contenthash(bytes32 node) external view returns (bytes)",
   "function pubkey(bytes32 node) external view returns (uint256 x, uint256 y)",
@@ -82,7 +83,7 @@ export class EZCCIP {
       }
     );
   }
-  enableENSIP10(get, { multicall = true } = {}) {
+  enableENSIP10(get, options = {}) {
     // https://docs.ens.domains/ensip/10
     this.register(
       "resolve(bytes, bytes) external view returns (bytes)",
@@ -95,13 +96,13 @@ export class EZCCIP {
         history.show = [name];
         let record = await get(name, context, history);
         if (record) history.record = record;
-        return processENSIP10(record, data, multicall, history.then());
+        return processENSIP10(record, data, options, history.then());
         // returns raw since: abi.decode(abi.encode(x)) == x
       }
     );
   }
   findHandler(key) {
-    if (/^0x[0-9a-f]{8}$/.test(key)) {
+    if (/^0x[0-9a-f]{8}$/i.test(key)) {
       return this.impls.get(key.toLowerCase());
     } else if (key instanceof FunctionFragment) {
       return this.impls.get(key.selector);
@@ -236,15 +237,16 @@ export class EZCCIP {
 export async function processENSIP10(
   record,
   calldata,
-  multicall = true,
+  {multicall = true, defaultAddress = true} = {},
   history
 ) {
   try {
     if (history) history.calldata = calldata;
     let method = calldata.slice(0, 10);
     let frag = RESOLVE_ABI.getFunction(method);
-    if (!frag || (!multicall && frag.name === MULTICALL))
+    if (!frag || (!multicall && frag.name === MULTICALL)) {
       throw error_with(`unsupported resolve() method: ${method}`, { calldata });
+    }
     if (history) {
       history.name = frag.name;
     }
@@ -261,7 +263,7 @@ export async function processENSIP10(
         res = [
           await Promise.all(
             args.calls.map((x) =>
-              processENSIP10(record, x, true, history?.enter()).catch(
+              processENSIP10(record, x, {multicall, defaultAddress}, history?.enter()).catch(
                 encode_error
               )
             )
@@ -271,7 +273,10 @@ export async function processENSIP10(
       }
       case "addr(bytes32)": {
         // https://eips.ethereum.org/EIPS/eip-137
-        let value = await record?.addr?.(60n);
+        let value = await record?.addr?.(COIN_TYPE_ETH);
+        if (defaultAddress && !value) {
+          value = await record?.addr?.(COIN_TYPE_DEFAULT);
+        }
         res = [
           "0x" + (value ? hexlify(value).slice(2, 42) : "").padStart(40, "0"),
         ];
@@ -281,7 +286,16 @@ export async function processENSIP10(
         // https://eips.ethereum.org/EIPS/eip-2304
         if (history) history.show = [addr_type_str(args.type)];
         let value = await record?.addr?.(args.type);
+        if (defaultAddress && !value && chain_from_coin_type(args.type)) {
+          value = await record?.addr?.(COIN_TYPE_DEFAULT);
+        }
         res = [value || "0x"];
+        break;
+      }
+      case "hasAddr(bytes32,uint256)": {
+        if (history) history.show = [addr_type_str(args.type)];
+        let value = await record?.addr?.(args.type);
+        res = !!value;
         break;
       }
       case "text(bytes32,string)": {

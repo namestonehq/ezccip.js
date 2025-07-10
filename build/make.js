@@ -37,8 +37,10 @@ async function esbuild(esm) {
 		fix_js_ext(join(outdir, types + jsExtension), jsExtension);
 		const typesFile = join(outdir, types + typeExtension);
 		copyFileSync(join(base, 'build', `${types}.d.ts`), typesFile);
+		console.log(`Wrote: ${typesFile}`);
 		fix_js_ext(typesFile, jsExtension);
 	}
+	console.log(`Built: ${format}`);
 }
 
 function fix_js_ext(file, ext) {
