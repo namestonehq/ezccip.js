@@ -13,6 +13,7 @@ type AnySync<T> = T | Promise<T>;
 
 interface Record {
 	addr?(type: bigint): AnySync<BytesLike | undefined>;
+	data?(key: string): AnySync<BytesLike | undefined>;
 	text?(key: string): AnySync<string | undefined>;
 	contenthash?(): AnySync<BytesLike | undefined>;
 	pubkey?(): AnySync<
@@ -77,12 +78,13 @@ type EZCCIPConfig = {
 type ENSIP10Options = {
 	multicall?: boolean;
 	defaultAddress?: boolean;
+	throwErrors?: boolean;
 };
 
 export class EZCCIP {
-	enableENSIP10(get: RecordFunction, options?: ENSIP10Options): void;
+	enableENSIP10(get: RecordFunction, options?: ENSIP10Options & { unreachableAsEmpty?: boolean}): void;
 	register(
-		abi: string | string[] | Interface,
+		abi: string | string[] | FunctionFragment | Interface,
 		impl: CCIPReadFunction | { [name: string]: CCIPReadFunction }
 	): CCIPReadHandler[];
 	findHandler(key: string | FunctionFragment): CCIPReadHandler | undefined;

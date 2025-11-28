@@ -1,11 +1,10 @@
-import {processENSIP10} from '../src/ezccip.js'; 
+import {processENSIP10, EZCCIP, RESOLVE_ABI} from '../src/ezccip.js'; 
 import {ethers} from 'ethers';
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 
 test('addr() => address', async T => {
-	const abi = new ethers.Interface(['function addr(bytes32) returns (address)']);
-	const call = abi.encodeFunctionData('addr', [ethers.ZeroHash]);
+	const call = RESOLVE_ABI.encodeFunctionData('addr(bytes32)', [ethers.ZeroHash]);
 	function make(name, data) {
 		return T.test(name, async () => {
 			const encoded = await processENSIP10({
@@ -30,8 +29,7 @@ test('addr() => address', async T => {
 });
 
 test('addr() => bytes', async T => {
-	const abi = new ethers.Interface(['function addr(bytes32,uint256) returns (bytes)']);
-	const call = abi.encodeFunctionData('addr', [ethers.ZeroHash, 0]);
+	const call = RESOLVE_ABI.encodeFunctionData('addr(bytes32,uint256)', [ethers.ZeroHash, 0]);
 	function make(name, data) {
 		return T.test(name, async () => {
 			let encoded = await processENSIP10({
@@ -40,11 +38,37 @@ test('addr() => bytes', async T => {
 			assert.equal(encoded, ethers.AbiCoder.defaultAbiCoder().encode(['bytes'], [data || '0x']));
 		});
 	}
-	const v = ethers.randomBytes(63);
 	await make('Uint8Array(0)', new Uint8Array(0));
 	await make('Uint8Array', ethers.randomBytes(63));
 	await make('null hex', '0x');
 	await make('hex', '0x12');
 	await make('null', null);
 	await make('undefined');
+});
+
+test('unreachableAsEmpty', async T => {
+	const sender = ethers.ZeroAddress;
+	const calldata = RESOLVE_ABI.encodeFunctionData('resolve', ['0x00', RESOLVE_ABI.encodeFunctionData('addr(bytes32)', [ethers.ZeroHash])]);
+	await T.test('false (default)', async () => {
+		const ezccip = new EZCCIP();
+		ezccip.enableENSIP10(() => undefined);
+		const {data} = await ezccip.handleRead(sender, calldata, {protocol: 'raw'});
+		assert.equal(data, RESOLVE_ABI.encodeErrorResult('UnreachableName', ['0x00']));
+	});
+	await T.test('true', async () => {
+		const ezccip = new EZCCIP();
+		ezccip.enableENSIP10(() => undefined, { unreachableAsEmpty: true });
+		const {data} = await ezccip.handleRead(sender, calldata, {protocol: 'raw'});
+		assert.equal(data, '0x0000000000000000000000000000000000000000000000000000000000000000');
+	});
+});
+
+test('throwErrors', async T => {
+	const selector = '0x12345678';
+	await T.test('false (default)', async () => {
+		assert.equal(await processENSIP10(undefined, selector), RESOLVE_ABI.encodeErrorResult('UnsupportedResolverProfile', [selector]));
+	});
+	await T.test('true', async () => {
+		await assert.rejects(() => processENSIP10(undefined, selector, { throwErrors: true }));
+	});
 });

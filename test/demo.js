@@ -1,32 +1,38 @@
 import {EZCCIP} from '../src/ezccip.js'; 
 import {serve} from '../src/serve.js'; 
 import {readFileSync} from 'node:fs';
-import { COIN_TYPE_DEFAULT } from '../src/utils.js';
+import {COIN_TYPE_DEFAULT} from '../src/utils.js';
 
 const DNSTORWithENSProtocol = '0x3CA097Edd180Ea2C2436BD30c021Ca20869087a0';
 
-let {version} = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)));
+const {version} = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)));
 
-let ezccip = new EZCCIP();
+const ezccip = new EZCCIP();
 ezccip.register('example(uint256, uint256) returns (uint256)', ([a, b]) => [a * 1000n + b]);
 ezccip.enableENSIP10(async (name, context) => {
 	if (context.origin === DNSTORWithENSProtocol) {
 		context.protocol = 'ens'; // dynamic protocol change
 	}
+	if (name === '__dne') return; // unreachable
 	return {
+		addr(type) {
+			switch (type) {
+				case COIN_TYPE_DEFAULT: return '0x51050ec063d393217b436747617ad1c2285aeeee';
+				case 3n: return '0x76a9149eb02ebe2f323494320f9b1153f07a2e0eff528588ac'; // encoded $doge address
+			}
+		},
+		data(key) {
+			switch (key) {
+				case 'test': return '0x1234';
+			}
+		},
 		text(key) {
 			switch (key) {
 				case 'name': return `ezccip Demo for ${name} (v${version})`;
 				case 'notice': return new Date().toLocaleString();
 				case 'description': return `Connection from ${context.ip}`;
-				case 'avatar': return 'https://raffy.antistupid.com/ens.jpg';
+				case 'avatar': return 'https://raffy.xyz/ens.jpg';
 				case 'location': return `Protocol(${context.protocol}) Sender(${context.sender})`;
-			}
-		},
-		addr(type) {
-			switch (type) {
-				case COIN_TYPE_DEFAULT: return '0x51050ec063d393217b436747617ad1c2285aeeee';
-				case 3n: return '0x76a9149eb02ebe2f323494320f9b1153f07a2e0eff528588ac'; // encoded $doge address
 			}
 		},
 		pubkey() {
