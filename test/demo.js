@@ -1,7 +1,7 @@
 import {EZCCIP} from '../src/ezccip.js'; 
 import {serve} from '../src/serve.js'; 
 import {readFileSync} from 'node:fs';
-import { COIN_TYPE_DEFAULT } from '../src/utils.js';
+import {COIN_TYPE_DEFAULT} from '../src/utils.js';
 
 const DNSTORWithENSProtocol = '0x3CA097Edd180Ea2C2436BD30c021Ca20869087a0';
 
@@ -13,6 +13,7 @@ ezccip.enableENSIP10(async (name, context) => {
 	if (context.origin === DNSTORWithENSProtocol) {
 		context.protocol = 'ens'; // dynamic protocol change
 	}
+	if (name === '__dne') return; // unreachable
 	return {
 		addr(type) {
 			switch (type) {

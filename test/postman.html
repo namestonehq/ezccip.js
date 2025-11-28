@@ -229,6 +229,9 @@ textarea {
 	font-size: 100%;
 	align-self: stretch;
 }
+#unknown_btn {
+	background-color: #ffc;
+}
 #start_btn {
 	font-weight: bold;
 	background-color: #afa;
@@ -569,6 +572,7 @@ footer {
 		<button id="copy_link_btn" style="margin-left: auto">🔗️ Copy Link</button>
 		<button id="data_btn">Calldata</button>
 		<button id="start_btn" disabled>Call</button>
+		<button id="unknown_btn">Call Unsupported</button>
 		<button id="stop_btn" class="hide">🛑️ Stop</button>
 	</div>
 </div>
@@ -656,6 +660,7 @@ const abi_span = document.querySelector('#abi_span');
 const calldata_div = document.querySelector('#calldata');
 const calldata_ta = document.querySelector('#calldata_ta');
 const calldata_btn = document.querySelector('#calldata_btn');
+const unknown_btn = document.querySelector('#unknown_btn');
 const calldata_status = document.querySelector('#calldata_status');
 const main_spinner = document.querySelector('#actions .spinner');
 const add_field_btn = document.querySelector('#add_field_btn');
@@ -751,6 +756,7 @@ to_batch_btn.addEventListener('click', () => {
 		}]
 	})
 });
+unknown_btn.addEventListener('click', try_call);
 start_btn.addEventListener('click', try_call);
 stop_btn.addEventListener('click', () => {
 	aborter.abort();
@@ -778,7 +784,6 @@ data_btn.addEventListener('click', () => {
 				let row = create_log({time: `#${i+1}`});
 				let {name, args: [_, arg], selector} = RESOLVE_ABI.parseTransaction({data: call});
 				add_tag(row, create('span', {className: 'tag record', dataset: {name}, innerHTML: `${name}(${arg ?? ''})`}));
-				
 				output_div.append(row, create_pre(call, true, row, Infinity));
 			}
 		}
@@ -1123,6 +1128,7 @@ function update_ux() {
 		proto: proto_select.value
 	};
 
+	let show_unknown = false;
 	if (func === FUNC_ABI) {
 		parse_abi();
 		if (!abi) ok = false;
@@ -1141,6 +1147,8 @@ function update_ux() {
 		json.batches = batches;
 	} else {
 		let fields = get_fields().map(parse_field);
+		unknown_btn.disabled = !name_norm;
+		if (!fields.length) show_unknown = true;
 		field_count_lbl.innerHTML = `${fields.length} ${plural(fields.length, 'field')}`;
 		delete_all_fields_btn.classList.toggle('hide', fields.length < 2);
 		multi_select.classList.toggle('hide', fields.length < 2);
@@ -1156,6 +1164,7 @@ function update_ux() {
 		json.fields = fields;
 		to_batch_btn.disabled = !ok;
 	}
+	unknown_btn.classList.toggle('hide', !show_unknown);
 
 	data_btn.disabled = !ok;
 	parse_endpoint();
@@ -1189,7 +1198,9 @@ function make_calldata() {
 	} else {
 		let profile = parse_profile();
 		let calls = profile.makeGetters({name: name_norm});
-		if (calls.length == 1) {
+		if (!calls.length) {
+			return RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, '0x12345678']);
+		} else if (calls.length == 1) {
 			return RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, calls[0]]);
 		} else if (multi_select.value == 'outer') {
 			return RESOLVE_ABI.encodeFunctionData('multicall', [calls.map(call => RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, call]))]);
@@ -1300,36 +1311,61 @@ async function try_call() {
 				let parsed = RESOLVE_ABI.parseTransaction({data: request});
 				let calls, answers;
 				let multicall = RESOLVE_ABI.getFunction('multicall');
-				if (parsed.name === 'resolve') {
-					let call = parsed.args[1];
-					if (call.startsWith(multicall.selector)) {
-						[calls] = RESOLVE_ABI.decodeFunctionData(multicall, call);
-						[answers] = RESOLVE_ABI.decodeFunctionResult(multicall, response);
-					} else {
-						calls = [call];
-						answers = [response];
+				if ((response.length - 2) & 63) {
+					const row = create_log({title: '⚠️ Resolver Error'});
+					row.classList.add('error');
+					const selector = response.slice(0, 10);
+					add_tag(row, create_tag('Error', [
+						create('a', {href: `https://www.4byte.directory/signatures/?bytes4_signature=${selector}`}, selector), 
+						create_copy_btn(selector)
+					], 'code selector'));
+					const error = RESOLVE_ABI.parseError(response);
+					if (error) {
+						add_tag(row, create_tag('Signature', error.signature, 'code'));
 					}
+					add_tag(row, create_copy_btn(response));
+					output_div.append(row, create_pre(response));
 				} else {
-					calls = parsed.args[0].toArray().map(call => RESOLVE_ABI.decodeFunctionData('resolve', call)[1]);
-					[answers] = RESOLVE_ABI.decodeFunctionResult(multicall, response);
-				}
-				calls.forEach((call, i) => {
-					let answer = answers[i];
-					let {name, args: [_, arg], selector} = RESOLVE_ABI.parseTransaction({data: call});
-					let row = create_log({time: `#${i+1}`});
-					add_tag(row, create('span', {className: 'tag record', dataset: {name}, innerHTML: `${name}(${arg ?? ''})`}));
-					add_tag(row, create_tag('Request', [call.slice(0, 10), create_copy_btn(call)], 'code selector'));
-					add_tag(row, create_tag('Response', create_copy_btn(answer)));
-					add_tag(row, create_tag(null, `${(answer.length - 2) >> 1} bytes`, 'size'));
-					output_div.append(row);
-				});
+					if (parsed.name === 'resolve') {
+						let call = parsed.args[1];
+						if (call.startsWith(multicall.selector)) {
+							[calls] = RESOLVE_ABI.decodeFunctionData(multicall, call);
+							[answers] = RESOLVE_ABI.decodeFunctionResult(multicall, response);
+						} else {
+							calls = [call];
+							answers = [response];
+						}
+					} else {
+						calls = parsed.args[0].toArray().map(call => RESOLVE_ABI.decodeFunctionData('resolve', call)[1]);
+						[answers] = RESOLVE_ABI.decodeFunctionResult(multicall, response);
+					}
+					calls.forEach((call, i) => {
+						let answer = answers[i];
+						const error = ((answers.length - 2) & 63) != 0;
+						let {name, args: [_, arg], selector} = RESOLVE_ABI.parseTransaction({data: call});
+						let row = create_log({time: `#${i+1}`});
+						add_tag(row, create('span', {className: 'tag record', dataset: {name}, innerHTML: `${name}(${arg ?? ''})`}));
+						add_tag(row, create_tag('Request', [call.slice(0, 10), create_copy_btn(call)], 'code selector'));
+						row.classList.toggle('error', error);
+						if (error) {
+							const selector = answer.slice(0, 10);
+							add_tag(row, create_tag('Error', [
+								create('a', {href: `https://www.4byte.directory/signatures/?bytes4_signature=${selector}`}, selector), 
+								create_copy_btn(selector)
+							], 'code selector'));
+						}
+						add_tag(row, create_tag('Response', create_copy_btn(answer)));
+						add_tag(row, create_tag(null, `${(answer.length - 2) >> 1} bytes`, 'size'));
+						output_div.append(row);
+					});
 
-				let record = new Record();
-				record.parseCalls(calls, answers);
-				let row = create_log({title: 'Record'});
-				add_tag(row, create_tag('Count', `${record.size}/${calls.length}`));
-				add_tag(row, create_copy_btn(JSON.stringify(record.toJSON())));
-				output_div.append(row, create_pre_json(record.toObject()));
+					let record = new Record();
+					record.parseCalls(calls, answers);
+					let row = create_log({title: 'Record'});
+					add_tag(row, create_tag('Count', `${record.size}/${calls.length}`));
+					add_tag(row, create_copy_btn(JSON.stringify(record.toJSON())));
+					output_div.append(row, create_pre_json(record.toObject()));
+				}
 
 			} else if (func_select.value === FUNC_ABI) {
 				try {

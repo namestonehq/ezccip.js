@@ -103,7 +103,7 @@ export class EZCCIP {
 				let record = await get(name, context, history);
 				if (!record && !options.unreachableAsEmpty) {
 					history.error = 'UnreachableName';
-					return RESOLVE_ABI.encodeFunctionResult('UnreachableName', [dnsname]);
+					return RESOLVE_ABI.encodeErrorResult('UnreachableName', [dnsname]);
 				}
 				if (record) history.record = record;
 				return processENSIP10(record, data, options, history.then());

@@ -52,7 +52,8 @@ test('unreachableAsEmpty', async T => {
 	await T.test('false (default)', async () => {
 		const ezccip = new EZCCIP();
 		ezccip.enableENSIP10(() => undefined);
-		await assert.rejects(() => ezccip.handleRead(sender, calldata, {protocol: 'raw'}));
+		const {data} = await ezccip.handleRead(sender, calldata, {protocol: 'raw'});
+		assert.equal(data, RESOLVE_ABI.encodeErrorResult('UnreachableName', ['0x00']));
 	});
 	await T.test('true', async () => {
 		const ezccip = new EZCCIP();
