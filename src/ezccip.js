@@ -283,7 +283,7 @@ export async function processENSIP10(
 				res = [
 					await Promise.all(
 						args.calls.map((x) =>
-							processENSIP10(record, x, {multicall, defaultAddress, signedErrors}, history?.enter()).catch(
+							processENSIP10(record, x, {multicall, defaultAddress, throwErrors}, history?.enter()).catch(
 								encode_error
 							)
 						)

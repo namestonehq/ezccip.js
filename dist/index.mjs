@@ -298,7 +298,7 @@ async function processENSIP10(record, calldata, { multicall = true, defaultAddre
         res = [
           await Promise.all(
             args.calls.map(
-              (x) => processENSIP10(record, x, { multicall, defaultAddress, signedErrors }, history?.enter()).catch(
+              (x) => processENSIP10(record, x, { multicall, defaultAddress, throwErrors }, history?.enter()).catch(
                 encode_error
               )
             )

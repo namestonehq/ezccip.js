@@ -498,8 +498,8 @@ footer {
 		<label for="proto_select">Protocol:</label>
 		<select id="proto_select">
 			<option value="raw">Raw</option>
-			<option value="ens">ENS</option>
-			<option value="tor" selected>TOR</option>
+			<option value="ens" selected>ENS</option>
+			<option value="tor">TOR</option>
 		</select>
 		<!-- <input id="signer_field" class="code" placeholder="0x0000000000000000000000000000000000000000"> -->
 	</div>
@@ -579,7 +579,7 @@ footer {
 </footer>
 <script type="module">
 import {Coin, Record, Profile, dns_encoded} from '../../enson.js/dist/index.min.js';
-import {ethers} from 'https://cdnjs.cloudflare.com/ajax/libs/ethers/6.12.1/ethers.min.js';
+import {ethers} from 'https://cdnjs.cloudflare.com/ajax/libs/ethers/6.15.0/ethers.min.js';
 
 const JSON_INDENT = '    '; // \t
 
@@ -590,6 +590,7 @@ const TEMPLATE_SENDER = '{sender}';
 
 const TYPE_CHASH = 'chash';
 const TYPE_TEXT = 'text';
+const TYPE_DATA = 'data';
 const TYPE_ADDR = 'addr';
 const TYPE_NAME = 'name';
 const TYPE_PUBKEY = 'pubkey';
@@ -599,7 +600,7 @@ const FUNC_ABI = 'abi';
 const FUNC_CALLDATA = 'calldata';
 const FUNC_BATCH = 'batch';
 
-const SUGGESTED_KEYS = [...Profile.ENS().texts];
+const SUGGESTED_TEXT_KEYS = [...Profile.ENS().texts];
 const SUGGESTED_COINS = [...Coin].filter(x => !x.unnamed && !x.legacy).sort((a, b) => a.type > b.type ? 1 : -1);
 
 const BYTES_OPS = [
@@ -609,20 +610,27 @@ const BYTES_OPS = [
 	{name: 'DNS Encoded', encode: s => ethers.hexlify(dns_encoded(s)) },
 ];
 
-const ENSIP10_ABI = new ethers.Interface([
-	'function multicall(bytes[] calls) external view returns (bytes[])',
-	'function resolve(bytes, bytes) external view returns (bytes)',
-	'function name(bytes32 node) external view returns (string)',
-	'function addr(bytes32 node) external view returns (address)',
-	'function addr(bytes32 node, uint256 type) external view returns (bytes)',
-	'function text(bytes32 node, string key) external view returns (string)',
-	'function contenthash(bytes32 node) external view returns (bytes)',
-	'function pubkey(bytes32 node) external view returns (uint256 x, uint256 y)',
-]);
-
 const BATCH_ABI = new ethers.Interface([
 	'function query((address, string[], bytes)[] memory data) external view returns (bool[] memory failures, bytes[] memory responses)',
 	'error HttpError((uint16 status, string message)[] errors)',
+]);
+
+const RESOLVE_ABI = new ethers.Interface([
+	"function resolve(bytes, bytes) view returns (bytes)",
+	"function multicall(bytes[] calls) view returns (bytes[])",
+	//
+	"function name(bytes32 node) view returns (string)",
+	"function addr(bytes32 node) view returns (address)",
+	"function addr(bytes32 node, uint256 type) view returns (bytes)",
+	"function hasAddr(bytes32 node, uint256 type) view returns (bool)",
+	"function data(bytes32 node, string key) view returns (bytes)",
+	"function text(bytes32 node, string key) view returns (string)",
+	"function contenthash(bytes32 node) view returns (bytes)",
+	"function pubkey(bytes32 node) view returns (uint256 x, uint256 y)",
+	"function ABI(bytes32 node, uint256 types) view returns (uint256 type, bytes memory data)",
+	//
+	"error UnsupportedResolverProfile(bytes4 selector)",
+	"error UnreachableName(bytes name)",
 ]);
 
 const endpoint_field = document.querySelector('#endpoint_field');
@@ -716,6 +724,9 @@ profile_save_btn.addEventListener('click', () => {
 	for (let key of p.texts) {
 		add_field({type: TYPE_TEXT, arg: key});
 	}
+	for (let key of p.datas) {
+		add_field({type: TYPE_DATA, arg: key});
+	}
 	for (let type of p.coins) {
 		let coin = Coin.fromType(type);
 		add_field({type: TYPE_ADDR, arg: coin.unnamed ? coin.toJSON() : `$${coin.name}` })		
@@ -765,7 +776,7 @@ data_btn.addEventListener('click', () => {
 			for (let i = 0; i < calls.length; i++) {
 				let call = ethers.hexlify(calls[i]);
 				let row = create_log({time: `#${i+1}`});
-				let {name, args: [_, arg], selector} = ENSIP10_ABI.parseTransaction({data: call});
+				let {name, args: [_, arg], selector} = RESOLVE_ABI.parseTransaction({data: call});
 				add_tag(row, create('span', {className: 'tag record', dataset: {name}, innerHTML: `${name}(${arg ?? ''})`}));
 				
 				output_div.append(row, create_pre(call, true, row, Infinity));
@@ -780,7 +791,8 @@ add_field_btn.addEventListener('click', e => {
 		delete_fields();
 		let p = Profile.ENS();
 		for (let x of p.texts) add_field({type: TYPE_TEXT, arg: x});
-		for (let x of p.coins) add_field({type: TYPE_TEXT, arg: `$${Coin.fromType(x).name}`});
+		for (let x of p.datas) add_field({type: TYPE_DATA, arg: x});
+		for (let x of p.coins) add_field({type: TYPE_ADDR, arg: `$${Coin.fromType(x).name}`});
 		add_field({type: TYPE_CHASH});
 		add_field({type: TYPE_PUBKEY});
 		add_field({type: TYPE_NAME});
@@ -855,6 +867,7 @@ function config_from_params(params) {
 			}
 			switch (k) {
 				case TYPE_TEXT:
+				case TYPE_DATA:
 				case TYPE_ADDR:
 					json.fields.push({type: k, arg: v});
 					break;
@@ -1171,17 +1184,17 @@ function make_calldata() {
 	} else if (func_select.value === FUNC_CALLDATA) {
 		return calldata_ta.value.trim();
 	} else if (func_select.value === FUNC_BATCH) {
-		let batches = get_batches().map(parse_batch);		
+		let batches = get_batches().map(parse_batch);
 		return BATCH_ABI.encodeFunctionData('query', [batches.map(x => [x.address, x.endpoints, x.calldata])]);
 	} else {
 		let profile = parse_profile();
 		let calls = profile.makeGetters({name: name_norm});
 		if (calls.length == 1) {
-			return ENSIP10_ABI.encodeFunctionData('resolve', [name_dns, calls[0]]);
+			return RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, calls[0]]);
 		} else if (multi_select.value == 'outer') {
-			return ENSIP10_ABI.encodeFunctionData('multicall', [calls.map(call => ENSIP10_ABI.encodeFunctionData('resolve', [name_dns, call]))]);
+			return RESOLVE_ABI.encodeFunctionData('multicall', [calls.map(call => RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, call]))]);
 		} else {
-			return ENSIP10_ABI.encodeFunctionData('resolve', [name_dns, ENSIP10_ABI.encodeFunctionData('multicall', [calls])]);
+			return RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, RESOLVE_ABI.encodeFunctionData('multicall', [calls])]);
 		}
 	}
 }
@@ -1284,25 +1297,25 @@ async function try_call() {
 			}
 
 			if (func_select.value === FUNC_ENSIP10) {
-				let parsed = ENSIP10_ABI.parseTransaction({data: request});
+				let parsed = RESOLVE_ABI.parseTransaction({data: request});
 				let calls, answers;
-				let multicall = ENSIP10_ABI.getFunction('multicall');
+				let multicall = RESOLVE_ABI.getFunction('multicall');
 				if (parsed.name === 'resolve') {
 					let call = parsed.args[1];
 					if (call.startsWith(multicall.selector)) {
-						[calls] = ENSIP10_ABI.decodeFunctionData(multicall, call);
-						[answers] = ENSIP10_ABI.decodeFunctionResult(multicall, response);
+						[calls] = RESOLVE_ABI.decodeFunctionData(multicall, call);
+						[answers] = RESOLVE_ABI.decodeFunctionResult(multicall, response);
 					} else {
 						calls = [call];
 						answers = [response];
 					}
 				} else {
-					calls = parsed.args[0].toArray().map(call => ENSIP10_ABI.decodeFunctionData('resolve', call)[1]);
-					[answers] = ENSIP10_ABI.decodeFunctionResult(multicall, response);
+					calls = parsed.args[0].toArray().map(call => RESOLVE_ABI.decodeFunctionData('resolve', call)[1]);
+					[answers] = RESOLVE_ABI.decodeFunctionResult(multicall, response);
 				}
 				calls.forEach((call, i) => {
 					let answer = answers[i];
-					let {name, args: [_, arg], selector} = ENSIP10_ABI.parseTransaction({data: call});
+					let {name, args: [_, arg], selector} = RESOLVE_ABI.parseTransaction({data: call});
 					let row = create_log({time: `#${i+1}`});
 					add_tag(row, create('span', {className: 'tag record', dataset: {name}, innerHTML: `${name}(${arg ?? ''})`}));
 					add_tag(row, create_tag('Request', [call.slice(0, 10), create_copy_btn(call)], 'code selector'));
@@ -1477,6 +1490,7 @@ function add_field({type, arg} = {}) {
 		}
 	});
 	type_select.append(create('option', {value: TYPE_TEXT}, 'text(key)'));
+	type_select.append(create('option', {value: TYPE_DATA}, 'data(key)'));
 	type_select.append(create('option', {value: TYPE_ADDR}, 'addr(coin?)'));
 	type_select.append(create('option', {value: TYPE_CHASH}, 'contenthash()'));
 	type_select.append(create('option', {value: TYPE_PUBKEY}, 'pubkey()'));
@@ -1501,7 +1515,15 @@ function add_field({type, arg} = {}) {
 			this.selectedIndex = -1;
 			update_ux_soon();
 		}	
-	}, SUGGESTED_KEYS.map(x => create('option', null, x)));
+	}, SUGGESTED_TEXT_KEYS.map(x => create('option', null, x)));
+	// let data_select = create('select', {
+	// 	className: 'suggest_select',
+	// 	input() {
+	// 		arg_field.value = this.value;
+	// 		this.selectedIndex = -1;
+	// 		update_ux_soon();
+	// 	}
+	// }, SUGGESTED_DATA_KEYS.map(x => create('option', null, x)));
 	let addr_select = create('select', {
 		className: 'suggest_select',
 		input() {
@@ -1515,6 +1537,7 @@ function add_field({type, arg} = {}) {
 		return create('option', {value: `$${name}`}, `[${name}] ${title} (${desc})`);
 	}));
 	text_select.selectedIndex = -1;
+	//data_select.selectedIndex = -1;
 	addr_select.selectedIndex = -1;
 	if (type) type_select.value = type;
 	if (arg) arg_field.value = arg;
@@ -1530,20 +1553,26 @@ function add_field({type, arg} = {}) {
 
 
 function type_has_arg(type) {
-	return type === TYPE_TEXT || type === TYPE_ADDR;
+	switch (type) {
+		case TYPE_TEXT:
+		case TYPE_DATA:
+		case TYPE_ADDR: return true;
+	}
 }
+
 function parse_field(f) {
-	const {type_select: {value: type}, arg_field, addr_select, text_select} = f;
+	const {type_select: {value: type}, arg_field, text_select, addr_select, data_select} = f;
 	arg_field.classList.toggle('invis', !type_has_arg(type));
 	text_select.classList.toggle('hide', type !== TYPE_TEXT);
+	//data_select.classList.toggle('hide', type !== TYPE_DATA);
 	addr_select.classList.toggle('hide', type !== TYPE_ADDR);
-	let arg = arg_field.value.trim();
-	if (type === TYPE_TEXT) {
+	const arg = arg_field.value.trim();
+	if (type === TYPE_TEXT || type === TYPE_DATA) {
 		arg_field.placeholder = 'key';
 		//if (arg.startsWith('"') && arg.endsWith('"')) arg = arg.slice(1, -1);
 		return {type, arg, error: !arg.length};
 	} else if (type === TYPE_ADDR) {
-		arg_field.placeholder = 'coinType • evm:$chain • $abbr • <empty>';
+		arg_field.placeholder = 'coinType • evm:$chain • $abbr • <empty>';
 		try {
 			parse_coin(arg);
 			return {type, arg};
@@ -1575,6 +1604,12 @@ function parse_profile() {
 			case TYPE_TEXT: {
 				if (arg) {
 					profile.setText(arg);
+				}
+				break;
+			}
+			case TYPE_DATA: {
+				if (arg) {
+					profile.setData(arg);
 				}
 				break;
 			}
