@@ -71,6 +71,18 @@ button.copy.copied {
 #add_field_btn {
 	background-color: #efe;
 }
+#mod_fields {
+	flex-wrap: wrap;
+}
+#mod_fields label {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	user-select: none;
+}
+#mod_fields label span {
+	white-space: pre;
+}
 /* #mod_fields button { align-self: stretch; } */
 .delete_btn {
 	background-color: #fee;
@@ -229,12 +241,16 @@ textarea {
 	font-size: 100%;
 	align-self: stretch;
 }
-#unknown_btn {
-	background-color: #ffc;
-}
 #start_btn {
 	font-weight: bold;
 	background-color: #afa;
+}
+#start_btn.unsupported {
+	font-weight: unset;
+	background-color: #ffc;
+}
+#start_btn.unsupported::after {
+	content: ' Unsupported';
 }
 #stop_btn {
 	background-color: #faa;
@@ -325,6 +341,7 @@ textarea {
 	background-color: #c4c4;
 }
 #output .record[data-name="text"] { background-color: #66f4; }
+#output .record[data-name="data"] { background-color: #a804; }
 #output .record[data-name="addr"] { background-color: #0a84; }
 #output .tag .copy {
 	width: 20px;
@@ -390,9 +407,6 @@ footer {
 	body {
 		margin: 1rem;
 	}
-	#mod_fields {
-		flex-wrap: wrap;
-	}
 	#multi_select {
 		order: 1;
 		flex: 100%;
@@ -421,14 +435,16 @@ footer {
 	<b> Examples:</b>
 	<button data-config='{
 		"endpoint":"https://raffy.xyz/ezccip/",
+		"proto":"tor",
 		"name":"raffy.eth",
 		"fields":[
 			{"type":"text", "arg": "location"},
 			{"type":"text", "arg": "name"},
 			{"type":"text", "arg": "notice"},
 			{"type":"text", "arg": "description"},
-			{"type": "addr", "arg": "$eth"},
-			{"type": "addr", "arg": "$doge"},
+			{"type":"data", "arg": "test"},
+			{"type":"addr", "arg": "$eth"},
+			{"type":"addr", "arg": "$doge"},
 			{"type":"pubkey"},
 			{"type":"chash"}
 		]
@@ -442,19 +458,22 @@ footer {
 			{"type":"text", "arg": "location"},
 			{"type": "addr", "arg": "$eth"}
 		]
-	}'>TOR w/ENS Protocol</button>
+	}'>ENS</button>
 	<button data-config='{
 		"endpoint": "https://raffy.xyz/ezccip/",
+		"proto":"tor",
 		"abi": "function example(uint256 a, uint256 b) returns (uint256 c)",
 		"args": ["69", "420"]
 	}'>ABI: Plus()</button>
 	<button data-config='{
 		"endpoint":"https://raffy.xyz/ezccip/",
+		"proto":"tor",
 		"calldata": "0x9061b92300000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000b0572616666790365746800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008459d1d43c9c8b7ac505c9f0161bbbd04437fce8c630a0886e1ffea00078e298f063a8a5df000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000086c6f636174696f6e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 	}'>Calldata: Plus()</button>
 	<b>Demos:</b>
 	<button data-config='{
 		"endpoint": "https://raffy.xyz/tog/raffyeth/",
+		"proto":"tor",
 		"name": "raffy.eth",
 		"fields": [{"type":"text", "arg": "description"}, {"type":"text", "arg": "location"}]
 	}'>TOG &rarr; <code>raffy.eth</code></button>
@@ -465,7 +484,7 @@ footer {
 		"proto": "raw"
 	}'>OffchainDNSOracle &rarr; <code>antistupid.com</code></button>
 	<button data-config='{
-		"endpoint": "https://ccip-v2.ens.xyz",
+		"endpoint": "https://ccip-v3.ens.xyz",
 		"batches": [{
 			"address": "0x84c5AdB77dd9f362A1a3480009992d8d47325dc3",
 			"endpoints": ["https://raffy.xyz/tog/raffyeth/e1"],
@@ -501,7 +520,7 @@ footer {
 		<label for="proto_select">Protocol:</label>
 		<select id="proto_select">
 			<option value="raw">Raw</option>
-			<option value="ens" selected>ENS</option>
+			<option value="ens">ENS</option>
 			<option value="tor">TOR</option>
 		</select>
 		<!-- <input id="signer_field" class="code" placeholder="0x0000000000000000000000000000000000000000"> -->
@@ -532,7 +551,10 @@ footer {
 			</button>
 			<span id="field_count_lbl">0 fields</span>
 			<button id="edit_profile_btn" title="JSON&#10;[ALT] Text">📝️ Edit as Profile</button>
-			<select id="multi_select" class="hide" style="margin-left: auto">
+			<label style="margin-left: auto">
+				<input id="node_as_null_check" type="checkbox"><span>Null Node</span>
+			</label>
+			<select id="multi_select" class="hide">
 				<option value="inner">resolve(name, multicall([...]))</option>
 				<option value="outer">multicall([resolve(name, ...), ...])</option>
 			</select>
@@ -572,7 +594,7 @@ footer {
 		<button id="copy_link_btn" style="margin-left: auto">🔗️ Copy Link</button>
 		<button id="data_btn">Calldata</button>
 		<button id="start_btn" disabled>Call</button>
-		<button id="unknown_btn">Call Unsupported</button>
+		<button id="unknown_btn" class="hide">Call Unsupported</button>
 		<button id="stop_btn" class="hide">🛑️ Stop</button>
 	</div>
 </div>
@@ -591,6 +613,8 @@ const STORAGE_KEY = 'ezccip.config';
 
 const TEMPLATE_DATA = '{data}';
 const TEMPLATE_SENDER = '{sender}';
+
+const DEFAULT_PROTO = 'ens';
 
 const TYPE_CHASH = 'chash';
 const TYPE_TEXT = 'text';
@@ -637,47 +661,46 @@ const RESOLVE_ABI = new ethers.Interface([
 	"error UnreachableName(bytes name)",
 ]);
 
-const endpoint_field = document.querySelector('#endpoint_field');
-const method_span = document.querySelector('#method_span');
-const endpoint_status = document.querySelector('#endpoint_status');
-const endpoint_btn = document.querySelector('#endpoint_btn');
-const sender_field = document.querySelector('#sender_field');
-const sender_status = document.querySelector('#sender_status');
-const func_select = document.querySelector('#func_select');
-const start_btn = document.querySelector('#start_btn');
-const copy_link_btn = document.querySelector('#copy_link_btn');
-const stop_btn = document.querySelector('#stop_btn');
-const data_btn = document.querySelector('#data_btn');
-const ensip10_div = document.querySelector('#ensip10');
-const name_field = document.querySelector('#name_field');
-const resolve_btn = document.querySelector('#resolve_btn');
-const to_batch_btn = document.querySelector('#to_batch_btn');
-const name_status = document.querySelector('#name_status');
-const abi_div = document.querySelector('#abi');
-const abi_ta = document.querySelector('#abi_ta');
-const abi_status = document.querySelector('#abi_status');
-const abi_span = document.querySelector('#abi_span');
-const calldata_div = document.querySelector('#calldata');
-const calldata_ta = document.querySelector('#calldata_ta');
-const calldata_btn = document.querySelector('#calldata_btn');
-const unknown_btn = document.querySelector('#unknown_btn');
-const calldata_status = document.querySelector('#calldata_status');
+const endpoint_field = document.getElementById('endpoint_field');
+const method_span = document.getElementById('method_span');
+const endpoint_status = document.getElementById('endpoint_status');
+const endpoint_btn = document.getElementById('endpoint_btn');
+const sender_field = document.getElementById('sender_field');
+const sender_status = document.getElementById('sender_status');
+const func_select = document.getElementById('func_select');
+const start_btn = document.getElementById('start_btn');
+const copy_link_btn = document.getElementById('copy_link_btn');
+const stop_btn = document.getElementById('stop_btn');
+const data_btn = document.getElementById('data_btn');
+const ensip10_div = document.getElementById('ensip10');
+const name_field = document.getElementById('name_field');
+const resolve_btn = document.getElementById('resolve_btn');
+const to_batch_btn = document.getElementById('to_batch_btn');
+const name_status = document.getElementById('name_status');
+const abi_div = document.getElementById('abi');
+const abi_ta = document.getElementById('abi_ta');
+const abi_status = document.getElementById('abi_status');
+const abi_span = document.getElementById('abi_span');
+const calldata_div = document.getElementById('calldata');
+const calldata_ta = document.getElementById('calldata_ta');
+const calldata_btn = document.getElementById('calldata_btn');
+const unknown_btn = document.getElementById('unknown_btn');
+const calldata_status = document.getElementById('calldata_status');
 const main_spinner = document.querySelector('#actions .spinner');
-const add_field_btn = document.querySelector('#add_field_btn');
-const delete_all_fields_btn = document.querySelector('#delete_all_fields_btn');
-const field_count_lbl = document.querySelector('#field_count_lbl');
-
-const batch_div = document.querySelector('#batch');
-const add_batch_btn = document.querySelector('#add_batch_btn');
-const delete_all_batches_btn = document.querySelector('#delete_all_batches_btn');
-
-const multi_select = document.querySelector('#multi_select');
-const proto_select = document.querySelector('#proto_select');
-const output_div = document.querySelector('#output');
-const edit_profile_btn = document.querySelector('#edit_profile_btn');
-const profile_dialog = document.querySelector('#profile_dialog');
-const profile_ta = document.querySelector('#profile_ta');
-const profile_save_btn = document.querySelector('#profile_save_btn');
+const add_field_btn = document.getElementById('add_field_btn');
+const delete_all_fields_btn = document.getElementById('delete_all_fields_btn');
+const field_count_lbl = document.getElementById('field_count_lbl');
+const batch_div = document.getElementById('batch');
+const add_batch_btn = document.getElementById('add_batch_btn');
+const delete_all_batches_btn = document.getElementById('delete_all_batches_btn');
+const multi_select = document.getElementById('multi_select');
+const proto_select = document.getElementById('proto_select');
+const output_div = document.getElementById('output');
+const edit_profile_btn = document.getElementById('edit_profile_btn');
+const profile_dialog = document.getElementById('profile_dialog');
+const profile_ta = document.getElementById('profile_ta');
+const profile_save_btn = document.getElementById('profile_save_btn');
+const node_as_null_check = document.getElementById('node_as_null_check');
 
 let start_time;
 let aborter;
@@ -694,6 +717,7 @@ func_select.addEventListener('input', () => {
 	update_ux();
 });
 multi_select.addEventListener('input', update_ux);
+node_as_null_check.addEventListener('input', update_ux);
 abi_ta.addEventListener('input', update_ux_soon);
 calldata_ta.addEventListener('input', update_ux_soon);
 calldata_btn.addEventListener('click', () => visit(`https://www.4byte.directory/signatures/?bytes4_signature=${calldata_ta.value.trim().slice(0, 10)}`));
@@ -777,8 +801,7 @@ data_btn.addEventListener('click', () => {
 		}
 		output_div.append(row, create_pre(make_calldata(), true, row, Infinity));
 		if (func_select.value === FUNC_ENSIP10) {
-			let profile = parse_profile();
-			let calls = profile.makeGetters({name: name_norm});
+			const calls = make_getters();
 			for (let i = 0; i < calls.length; i++) {
 				let call = ethers.hexlify(calls[i]);
 				let row = create_log({time: `#${i+1}`});
@@ -913,6 +936,8 @@ function params_from_config(json) {
 			v.forEach(({address, calldata, endpoints}) => params.append('batch', [`${address}${calldata.slice(2)}`, ...endpoints].join(',')));
 		} else if (k === 'args') {
 			v.forEach(x => params.append('arg', x));
+		} else if (k === 'proto' && v === DEFAULT_PROTO) {
+			continue;
 		} else if (v) {
 			params.append(k, v);
 		}
@@ -923,7 +948,7 @@ function params_from_config(json) {
 function load_config(json) {
 	endpoint_field.value = json.endpoint || '';
 	sender_field.value = json.sender || '';
-	proto_select.value = json.proto || 'tor';
+	proto_select.value = json.proto || DEFAULT_PROTO;
 	if (json.abi) {
 		func_select.value = FUNC_ABI;
 		abi_ta.value = json.abi || '';
@@ -944,6 +969,7 @@ function load_config(json) {
 		func_select.value = FUNC_ENSIP10;
 		name_field.value = json.name || '';
 		multi_select.value = json.multi;
+		node_as_null_check.checked = !!json.null;
 		if (!multi_select.value) multi_select.selectedIndex = 0;
 		delete_fields();
 		if (Array.isArray(json.fields)) {
@@ -1152,7 +1178,7 @@ function update_ux() {
 		field_count_lbl.innerHTML = `${fields.length} ${plural(fields.length, 'field')}`;
 		delete_all_fields_btn.classList.toggle('hide', fields.length < 2);
 		multi_select.classList.toggle('hide', fields.length < 2);
-		if (!fields.length) ok = false;
+		//if (!fields.length) ok = false;
 		parse_name();
 		if (!name_norm) ok = false;
 		json.name = name_field.value;
@@ -1163,8 +1189,9 @@ function update_ux() {
 		}
 		json.fields = fields;
 		to_batch_btn.disabled = !ok;
+		if (node_as_null_check.checked) json.null = 1;
 	}
-	unknown_btn.classList.toggle('hide', !show_unknown);
+	start_btn.classList.toggle('unsupported', show_unknown);
 
 	data_btn.disabled = !ok;
 	parse_endpoint();
@@ -1185,6 +1212,10 @@ function update_ux() {
 	return ok;
 }
 
+function make_getters() {
+	return parse_profile().makeGetters(node_as_null_check.checked ? {node: ethers.ZeroHash} : {name: name_norm});
+}
+
 function make_calldata() {
 	if (func_select.value === FUNC_ABI) {
 		return abi.encodeFunctionData(abi_func, abi_func.inputs.map((param, i) => {
@@ -1196,8 +1227,7 @@ function make_calldata() {
 		let batches = get_batches().map(parse_batch);
 		return BATCH_ABI.encodeFunctionData('query', [batches.map(x => [x.address, x.endpoints, x.calldata])]);
 	} else {
-		let profile = parse_profile();
-		let calls = profile.makeGetters({name: name_norm});
+		const calls = make_getters();
 		if (!calls.length) {
 			return RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, '0x12345678']);
 		} else if (calls.length == 1) {
@@ -1341,7 +1371,7 @@ async function try_call() {
 					}
 					calls.forEach((call, i) => {
 						let answer = answers[i];
-						const error = ((answers.length - 2) & 63) != 0;
+						const error = ((answer.length - 2) & 63) != 0;
 						let {name, args: [_, arg], selector} = RESOLVE_ABI.parseTransaction({data: call});
 						let row = create_log({time: `#${i+1}`});
 						add_tag(row, create('span', {className: 'tag record', dataset: {name}, innerHTML: `${name}(${arg ?? ''})`}));
@@ -1353,6 +1383,10 @@ async function try_call() {
 								create('a', {href: `https://www.4byte.directory/signatures/?bytes4_signature=${selector}`}, selector), 
 								create_copy_btn(selector)
 							], 'code selector'));
+							const error = RESOLVE_ABI.parseError(answer);
+							if (error) {
+								add_tag(row, create_tag('Signature', error.signature, 'code'));
+							}
 						}
 						add_tag(row, create_tag('Response', create_copy_btn(answer)));
 						add_tag(row, create_tag(null, `${(answer.length - 2) >> 1} bytes`, 'size'));
