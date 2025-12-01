@@ -1296,7 +1296,7 @@ async function try_call() {
 		output_div.append(row2, create_pre(text, false, row2));
 
 		let json = JSON.parse(text);
-		let {data: response, message, ...rest} = json;
+		let {data: response, message = 'no "message" specified', ...rest} = json;
 		//rest.a = 'a';
 		let unknown = Object.keys(rest);
 		if (unknown.length) {
@@ -1371,13 +1371,13 @@ async function try_call() {
 					}
 					calls.forEach((call, i) => {
 						let answer = answers[i];
-						const error = ((answer.length - 2) & 63) != 0;
+						const isError = ((answer.length - 2) & 63) != 0;
 						let {name, args: [_, arg], selector} = RESOLVE_ABI.parseTransaction({data: call});
 						let row = create_log({time: `#${i+1}`});
 						add_tag(row, create('span', {className: 'tag record', dataset: {name}, innerHTML: `${name}(${arg ?? ''})`}));
 						add_tag(row, create_tag('Request', [call.slice(0, 10), create_copy_btn(call)], 'code selector'));
-						row.classList.toggle('error', error);
-						if (error) {
+						row.classList.toggle('error', isError);
+						if (isError) {
 							const selector = answer.slice(0, 10);
 							add_tag(row, create_tag('Error', [
 								create('a', {href: `https://www.4byte.directory/signatures/?bytes4_signature=${selector}`}, selector), 
