@@ -207,6 +207,11 @@ textarea {
 	gap: 2px;
 	text-align: right;
 }
+#urg_verifier_field {
+	font: 12px monospace;
+	width: 50ch;
+	padding: 4px;
+}
 #batch .field + .field {
 	border-top: 2px solid #fff;
 	padding-top: 8px;
@@ -466,37 +471,25 @@ footer {
 		"args": ["69", "420"]
 	}'>ABI: Plus()</button>
 	<button data-config='{
-		"endpoint":"https://raffy.xyz/ezccip/",
-		"proto":"tor",
-		"calldata": "0x9061b92300000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000b0572616666790365746800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008459d1d43c9c8b7ac505c9f0161bbbd04437fce8c630a0886e1ffea00078e298f063a8a5df000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000086c6f636174696f6e00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
-	}'>Calldata: Plus()</button>
-	<b>Demos:</b>
-	<button data-config='{
 		"endpoint": "https://raffy.xyz/tog/raffyeth/",
 		"proto":"tor",
 		"name": "raffy.eth",
 		"fields": [{"type":"text", "arg": "description"}, {"type":"text", "arg": "location"}]
 	}'>TOG &rarr; <code>raffy.eth</code></button>
 	<button data-config='{
-		"endpoint": "https://dnssec-oracle.ens.domains/",
-		"abi": "function resolve(bytes memory name, uint16 qtype) returns ((bytes, bytes)[] memory rrs)",
-		"args": ["0x0a616e746973747570696403636f6d00", "16"],
-		"proto": "raw"
-	}'>OffchainDNSOracle &rarr; <code>antistupid.com</code></button>
+		"dns":"antistupid.com"
+	}'>DNSSEC &rarr; <code>antistupid.com</code></button>
 	<button data-config='{
-		"endpoint": "https://ccip-v3.ens.xyz",
 		"batches": [{
 			"address": "0x84c5AdB77dd9f362A1a3480009992d8d47325dc3",
 			"endpoints": ["https://raffy.xyz/tog/raffyeth/e1"],
 			"calldata": "0x9061b92300000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000000b057261666679036574680000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000243b3b57de9c8b7ac505c9f0161bbbd04437fce8c630a0886e1ffea00078e298f063a8a5df00000000000000000000000000000000000000000000000000000000"
-		}],
-		"proto": "raw"
-	}'>Batch Gateway &rarr; TOR &rarr; TOG &rarr; <code>raffy.eth</code></button>
-	<!-- <button data-config='{
-		"endpoint": "https://ens-gateway.onrender.com/",
-		"calldata": "0x33e953b500000000000000000000000000000000000000000000000000000000000000800000000000000000000000007c6efcb602bc88794390a0d74c75ad2f1249a17f00000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000020520000000000000000000000000000000000000000000000000000000000000001004001ff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000070000000000000000000000000000000000000000000000000000000000000020cb0cbc8493baf4a7b1972914ba0be89040e56e4a3c98d60268fe37b8c8e546d9",
-		"proto": "raw"
-	}'>EVMGateway: <code>raffy.teamnick.eth</code></button> -->
+		}]
+	}'>Batch &rarr; TOR &rarr; TOG &rarr; <code>raffy.eth</code></button>
+	<button data-config='{
+		"endpoint": "https://arbitrum.3668.io",
+		"request": "0x010fd8e504002cc26e3ec46d81971c16643200461451050ec063d393217b436747617ad1c2285aeeee483d003300000000000000000000000000000000000000"
+	}'>Arbitrum Primary &rarr; <code>5105.8000a4b1.reverse</code></button>
 </div>
 <main>
 <div id="config" class="rows">
@@ -507,7 +500,7 @@ footer {
 			<i id="endpoint_status"></i>
 			<button id="endpoint_btn" disabled>↗️ Visit</button>
 		</div>
-		<input class="big" id="endpoint_field" placeholder="https://raffy.xyz/tog/{data}">
+		<input class="big" id="endpoint_field">
 	</div>
 	<div>
 		<div class="header">
@@ -516,7 +509,7 @@ footer {
 		</div>
 		<input id="sender_field" class="code" placeholder="0x0000000000000000000000000000000000000000">
 	</div>
-	<div>
+	<div id="proto">
 		<label for="proto_select">Protocol:</label>
 		<select id="proto_select">
 			<option value="raw">Raw</option>
@@ -531,6 +524,8 @@ footer {
 			<option value="abi">Function ABI</option>
 			<option value="calldata">Raw Calldata</option>
 			<option value="batch">Batch Gateway</option>
+			<option value="dns">DNSSEC Oracle</option>
+			<option value="urg">Unruggable Gateway</option>
 		</select>
 	</div>
 	<div id="ensip10" class="rows hide">
@@ -589,12 +584,41 @@ footer {
 			</button>
 		</div>
 	</div>
+	<div id="urg" class="rows hide">
+		<div>
+			<div class="header">
+				<label for="urg_context_field">Context</label>
+				<i id="urg_context_status"></i>
+				<button id="urg_gateway_btn">From Gateway</button>
+				<!--
+				<button id="urg_verifier_btn">From Verifier:</button>
+				<input id="urg_verifier_field" placeholder="Verifier Address">
+				-->
+			</div>
+			<input class="code" id="urg_context_field" placeholder="0x">
+		</div>
+		<div>
+			<div class="header">
+				<label for="urg_ta">Request</label>
+			</div>
+			<textarea id="urg_ta" rows="8"></textarea>
+		</div>
+	</div>
+	<div id="dns" class="rows hide">
+		<div>
+			<div class="header">
+				<label for="dns_name_field">DNS Name</label>
+				<i id="dns_name_status"></i>
+			</div>
+			<input class="big" id="dns_name_field" placeholder="raffy.xyz">
+		</div>
+	</div>
 	<div id="actions" class="row">
 		<div id="spinner" class="spinner hide"></div>
 		<button id="copy_link_btn" style="margin-left: auto">🔗️ Copy Link</button>
-		<button id="data_btn">Calldata</button>
-		<button id="start_btn" disabled>Call</button>
-		<button id="unknown_btn" class="hide">Call Unsupported</button>
+		<button id="make_calldata_btn">✏️ Calldata</button>
+		<button id="calldataify_btn">🔀️ Render</button>
+		<button id="start_btn" disabled>⚡️ Call</button>
 		<button id="stop_btn" class="hide">🛑️ Stop</button>
 	</div>
 </div>
@@ -627,9 +651,13 @@ const FUNC_ENSIP10 = 'ensip10';
 const FUNC_ABI = 'abi';
 const FUNC_CALLDATA = 'calldata';
 const FUNC_BATCH = 'batch';
+const FUNC_URG = 'urg';
+const FUNC_DNS = 'dns';
 
 const SUGGESTED_TEXT_KEYS = [...Profile.ENS().texts];
 const SUGGESTED_COINS = [...Coin].filter(x => !x.unnamed && !x.legacy).sort((a, b) => a.type > b.type ? 1 : -1);
+
+const ABI_CODER = ethers.AbiCoder.defaultAbiCoder();
 
 const BYTES_OPS = [
 	{name: 'Hex', encode: s => ethers.hexlify(ethers.toUtf8Bytes(s)) },
@@ -641,6 +669,15 @@ const BYTES_OPS = [
 const BATCH_ABI = new ethers.Interface([
 	'function query((address, string[], bytes)[] memory data) external view returns (bool[] memory failures, bytes[] memory responses)',
 	'error HttpError((uint16 status, string message)[] errors)',
+]);
+
+const URG_ABI = new ethers.Interface([
+	`function proveRequest(bytes context, (bytes)) view returns (bytes)`,
+	`function getLatestContext() view returns (bytes)`,
+]);
+
+const DNS_ABI = new ethers.Interface([
+	`function resolve(bytes memory name, uint16 qtype) returns ((bytes, bytes)[] memory rrs)`
 ]);
 
 const RESOLVE_ABI = new ethers.Interface([
@@ -671,7 +708,8 @@ const func_select = document.getElementById('func_select');
 const start_btn = document.getElementById('start_btn');
 const copy_link_btn = document.getElementById('copy_link_btn');
 const stop_btn = document.getElementById('stop_btn');
-const data_btn = document.getElementById('data_btn');
+const make_calldata_btn = document.getElementById('make_calldata_btn');
+const calldataify_btn = document.getElementById('calldataify_btn');
 const ensip10_div = document.getElementById('ensip10');
 const name_field = document.getElementById('name_field');
 const resolve_btn = document.getElementById('resolve_btn');
@@ -684,7 +722,6 @@ const abi_span = document.getElementById('abi_span');
 const calldata_div = document.getElementById('calldata');
 const calldata_ta = document.getElementById('calldata_ta');
 const calldata_btn = document.getElementById('calldata_btn');
-const unknown_btn = document.getElementById('unknown_btn');
 const calldata_status = document.getElementById('calldata_status');
 const main_spinner = document.querySelector('#actions .spinner');
 const add_field_btn = document.getElementById('add_field_btn');
@@ -693,7 +730,18 @@ const field_count_lbl = document.getElementById('field_count_lbl');
 const batch_div = document.getElementById('batch');
 const add_batch_btn = document.getElementById('add_batch_btn');
 const delete_all_batches_btn = document.getElementById('delete_all_batches_btn');
+const urg_div = document.getElementById('urg');
+const urg_context_field = document.getElementById('urg_context_field');
+const urg_context_status = document.getElementById('urg_context_status');
+//const urg_verifier_field = document.getElementById('urg_verifier_field');
+//const urg_verifier_btn = document.getElementById('urg_verifier_btn');
+const urg_gateway_btn = document.getElementById('urg_gateway_btn');
+const dns_div = document.getElementById('dns');
+const dns_name_field = document.getElementById('dns_name_field');
+const dns_name_status = document.getElementById('dns_name_status');
+const urg_ta = document.getElementById('urg_ta');
 const multi_select = document.getElementById('multi_select');
+const proto_div = document.getElementById('proto');
 const proto_select = document.getElementById('proto_select');
 const output_div = document.getElementById('output');
 const edit_profile_btn = document.getElementById('edit_profile_btn');
@@ -706,7 +754,7 @@ let start_time;
 let aborter;
 let update_timer;
 
-let endpoint, sender, name_norm, name_dns, abi, abi_func;
+let endpoint, sender, abi, abi_func;
 
 const abi_fields = [];
 endpoint_field.addEventListener('input', update_ux_soon);
@@ -721,6 +769,27 @@ node_as_null_check.addEventListener('input', update_ux);
 abi_ta.addEventListener('input', update_ux_soon);
 calldata_ta.addEventListener('input', update_ux_soon);
 calldata_btn.addEventListener('click', () => visit(`https://www.4byte.directory/signatures/?bytes4_signature=${calldata_ta.value.trim().slice(0, 10)}`));
+urg_context_field.addEventListener('input', update_ux);
+//urg_verifier_field.addEventListener('input', update_ux);
+urg_gateway_btn.addEventListener('click', async () => {
+	urg_gateway_btn.disabled = true;
+	try {
+		const res = await fetch(new URL('./head', endpoint_field.value.trim()));
+		if (!res.ok) {
+			throw new Error(`HTTP ${res.status}`);
+		}
+		let {commitIndex} = await res.json();
+		if (typeof commitIndex === 'object' && commitIndex.value) {
+			commitIndex = commitIndex.value;
+		}
+		urg_context_field.value = commitIndex;
+	} catch (err) {
+		window.alert(String(err));
+	}
+	urg_gateway_btn.disabled = false;
+});
+urg_ta.addEventListener('input', update_ux_soon);
+dns_name_field.addEventListener('input', update_ux);
 proto_select.addEventListener('input', update_ux);
 endpoint_btn.addEventListener('click', () => visit(endpoint));
 delete_all_fields_btn.addEventListener('click', () => {
@@ -768,7 +837,7 @@ profile_save_btn.addEventListener('click', () => {
 	profile_dialog.close();
 
 });
-resolve_btn.addEventListener('click', () => visit(`https://adraffy.github.io/ens-normalize.js/test/resolver.html#${name_norm}`));
+resolve_btn.addEventListener('click', () => visit(`https://adraffy.github.io/ens-normalize.js/test/resolver.html#${parse_name().norm}`));
 to_batch_btn.addEventListener('click', () => {
 	load_config({
 		endpoint: 'https://ccip-v2.ens.xyz',
@@ -780,13 +849,17 @@ to_batch_btn.addEventListener('click', () => {
 		}]
 	})
 });
-unknown_btn.addEventListener('click', try_call);
 start_btn.addEventListener('click', try_call);
 stop_btn.addEventListener('click', () => {
 	aborter.abort();
 	stop_btn.disabled = true;
 });
-data_btn.addEventListener('click', () => {
+calldataify_btn.addEventListener('click', () => {
+	calldata_ta.value = make_calldata();
+	func_select.value = FUNC_CALLDATA;
+	update_ux();
+});
+make_calldata_btn.addEventListener('click', () => {
 	output_div.innerHTML = '';
 	try {
 		start_time = Date.now();
@@ -794,14 +867,16 @@ data_btn.addEventListener('click', () => {
 		if (func_select.value === FUNC_ABI) {
 			add_tag(row, create_tag('Signature', abi_func.format(), 'code'));
 			add_tag(row, create_tag('Inputs', abi_func.inputs.length));
-		} else if (func_select.value === FUNC_ENSIP10) {
-			add_tag(row, create_tag('Normalized', name_norm, 'code'));
-			add_tag(row, create_tag('Namehash', create_copy_btn(ethers.namehash(name_norm)), 'code'));
-			add_tag(row, create_tag('DNS-Encoded', create_copy_btn(name_dns), 'code'));
+		}
+		const name = parse_name();
+		if (name) {
+			add_tag(row, create_tag('Normalized', name.norm, 'code'));
+			add_tag(row, create_tag('Namehash', create_copy_btn(name.node), 'code'));
+			add_tag(row, create_tag('DNS-Encoded', create_copy_btn(name.dns), 'code'));
 		}
 		output_div.append(row, create_pre(make_calldata(), true, row, Infinity));
 		if (func_select.value === FUNC_ENSIP10) {
-			const calls = make_getters();
+			const calls = make_getters(parse_name());
 			for (let i = 0; i < calls.length; i++) {
 				let call = ethers.hexlify(calls[i]);
 				let row = create_log({time: `#${i+1}`});
@@ -840,7 +915,7 @@ delete_all_batches_btn.addEventListener('click', () => {
 copy_link_btn.addEventListener('click', () => {
 	navigator.clipboard.writeText(window.location.href);
 });
-for (let f of [endpoint_field, sender_field, name_field]) {
+for (let f of [endpoint_field, sender_field, name_field, dns_name_field]) {
 	f.addEventListener('keydown', e => {
 		if (e.key === 'Enter') {
 			start_btn.click();
@@ -936,21 +1011,41 @@ function params_from_config(json) {
 			v.forEach(({address, calldata, endpoints}) => params.append('batch', [`${address}${calldata.slice(2)}`, ...endpoints].join(',')));
 		} else if (k === 'args') {
 			v.forEach(x => params.append('arg', x));
-		} else if (k === 'proto' && v === DEFAULT_PROTO) {
+		} else if (k === 'proto' && (!can_proto() || v === DEFAULT_PROTO)) {
 			continue;
 		} else if (v) {
 			params.append(k, v);
 		}
 	}
+	if (func_select.value !== FUNC_ENSIP10 && detect_type(config_from_params(params)) !== func_select.value) {
+		params.append('type', func_select.value);
+	}
 	return params;
+}
+
+function detect_type(json) {
+	switch (json.type) {
+		case FUNC_ABI:
+		case FUNC_BATCH:
+		case FUNC_CALLDATA:
+		case FUNC_DNS:
+		case FUNC_URG: return json.type;
+	}
+	if (typeof json.dns === 'string') return FUNC_DNS;
+	if (typeof json.abi === 'string') return FUNC_ABI;
+	if (typeof json.calldata === 'string') return FUNC_CALLDATA;
+	if (Array.isArray(json.batches)) return FUNC_BATCH;
+	if (typeof json.request === 'string') return FUNC_URG;
+	return FUNC_ENSIP10;
 }
 
 function load_config(json) {
 	endpoint_field.value = json.endpoint || '';
 	sender_field.value = json.sender || '';
 	proto_select.value = json.proto || DEFAULT_PROTO;
-	if (json.abi) {
-		func_select.value = FUNC_ABI;
+	const type = detect_type(json);
+	func_select.value = type;
+	if (type === FUNC_ABI) {
 		abi_ta.value = json.abi || '';
 		parse_abi();
 		if (abi_func && Array.isArray(json.args)) {
@@ -958,13 +1053,15 @@ function load_config(json) {
 				abi_fields[i].querySelector('input').value = json.args[i] || '';
 			});
 		}
-	} else if (json.calldata) {
-		func_select.value = FUNC_CALLDATA;
+	} else if (type === FUNC_CALLDATA) {
 		calldata_ta.value = json.calldata || '';
-	} else if (json.batches) {
-		func_select.value = FUNC_BATCH;
+	} else if (type === FUNC_BATCH) {
 		delete_batches();
 		json.batches?.forEach(add_batch);
+	} else if (type === FUNC_URG) {
+		urg_ta.value = json.request || '';
+	} else if (type === FUNC_DNS) {
+		dns_name_field.value = json.dns || '';
 	} else {
 		func_select.value = FUNC_ENSIP10;
 		name_field.value = json.name || '';
@@ -988,13 +1085,16 @@ function focus_func() {
 			case FUNC_ABI: abi_ta.focus(); break;
 			case FUNC_CALLDATA: calldata_ta.focus(); break;
 			case FUNC_BATCH: batch_div.querySelector('.addr_field')?.focus(); break;
+			case FUNC_URG: urg_context_field.focus(); break;
+			case FUNC_DNS: dns_name_field.focus(); break;
 		}
 	});
 }
 
-function parse_endpoint() {
+function parse_endpoint(endpoint0 = '') {
+	endpoint_field.placeholder = endpoint0 || 'https://raffy.xyz/tog/{data}';
 	try {
-		endpoint = endpoint_field.value.trim();
+		endpoint = endpoint_field.value.trim() || endpoint0;
 		new URL(endpoint.replaceAll(TEMPLATE_SENDER, '0x').replaceAll(TEMPLATE_DATA, '0x'));
 		method_span.innerHTML = endpoint.includes(TEMPLATE_DATA) ? 'GET' : 'POST';
 		endpoint_status.innerHTML = '';
@@ -1091,18 +1191,34 @@ function parse_abi() {
 	}
 }
 function parse_name() {
+	let field, status;
+	switch (func_select.value) {
+		case FUNC_DNS: {
+			field = dns_name_field;
+			status = dns_name_status;
+			break;
+		}
+		case FUNC_ENSIP10: {
+			field = name_field;
+			status = name_status;
+			break;
+		}
+		default: return;
+	}
+	const input = field.value.trim();
 	try {
-		let name = name_field.value.trim();
-		if (!name) throw new Error('empty name');
-		name_norm = ethers.ensNormalize(name);
-		name_dns = ethers.hexlify(dns_encoded(name_norm));
-		name_status.innerHTML = '';
+		if (!input) throw new Error('empty name');
+		const norm = ethers.ensNormalize(input);
+		const dns = ethers.hexlify(dns_encoded(norm));
+		const node = ethers.namehash(norm);
+		status.innerHTML = '';
+		return {input, norm, node, dns};
 	} catch (err) {
-		name_norm = undefined;
 		let message = err.shortMessage || err.message;
-		let match = message.match(/^invalid ENS name \((.*)\)$/);
+		const match = message.match(/^invalid ENS name \((.*)\)$/);
 		if (match) message = match[1];
-		name_status.innerHTML = message;
+		status.innerHTML = message;
+		return {input, message};
 	}
 }
 
@@ -1145,7 +1261,11 @@ function update_ux() {
 	abi_div.classList.toggle('hide',      func !== FUNC_ABI);
 	calldata_div.classList.toggle('hide', func !== FUNC_CALLDATA);
 	batch_div.classList.toggle('hide',    func !== FUNC_BATCH);
-	
+	urg_div.classList.toggle('hide',      func !== FUNC_URG);
+	dns_div.classList.toggle('hide',      func !== FUNC_DNS);
+
+	calldataify_btn.classList.toggle('hide', func == FUNC_CALLDATA);
+
 	let ok = true;
 	
 	let json = {
@@ -1155,6 +1275,7 @@ function update_ux() {
 	};
 
 	let show_unknown = false;
+	let endpoint0;
 	if (func === FUNC_ABI) {
 		parse_abi();
 		if (!abi) ok = false;
@@ -1171,18 +1292,29 @@ function update_ux() {
 		delete_all_batches_btn.classList.toggle('hide', batches.length < 2);
 		if (batches.some(x => x.error)) ok = false;
 		json.batches = batches;
+		endpoint0 = 'https://ccip-v3.ens.xyz';
+	} else if (func === FUNC_URG) {
+		//urg_verifier_btn.disabled = !urg_verifier_field.value.trim();
+		if (!parse_urg_context()) ok = false;
+		if (!ethers.isHexString(urg_ta.value.trim())) ok = false;
+		json.context = urg_context_field.value;
+		json.request = urg_ta.value;
+	} else if (func === FUNC_DNS) {
+		const name = parse_name();
+		if (!name.norm) ok = false;
+		json.dns = name.input;
+		endpoint0 = 'https://dnssec-oracle.ens.domains/';
 	} else {
 		let fields = get_fields().map(parse_field);
-		unknown_btn.disabled = !name_norm;
 		if (!fields.length) show_unknown = true;
 		field_count_lbl.innerHTML = `${fields.length} ${plural(fields.length, 'field')}`;
 		delete_all_fields_btn.classList.toggle('hide', fields.length < 2);
 		multi_select.classList.toggle('hide', fields.length < 2);
 		//if (!fields.length) ok = false;
-		parse_name();
-		if (!name_norm) ok = false;
-		json.name = name_field.value;
-		resolve_btn.disabled = !name_norm;
+		const name = parse_name();
+		if (!name.norm) ok = false;
+		json.name = name.input;
+		resolve_btn.disabled = !name;
 		if (fields.some(x => x.error)) ok = false;
 		if (fields.length >= 2) {
 			json.multi = multi_select.value;
@@ -1191,10 +1323,12 @@ function update_ux() {
 		to_batch_btn.disabled = !ok;
 		if (node_as_null_check.checked) json.null = 1;
 	}
+	proto_div.classList.add('hide', !can_proto(func));
 	start_btn.classList.toggle('unsupported', show_unknown);
 
-	data_btn.disabled = !ok;
-	parse_endpoint();
+	make_calldata_btn.disabled = !ok;
+	calldataify_btn.disabled = !ok;
+	parse_endpoint(endpoint0);
 	if (!endpoint) ok = false;
 	parse_sender();
 	if (!sender) ok = false;
@@ -1212,8 +1346,16 @@ function update_ux() {
 	return ok;
 }
 
-function make_getters() {
-	return parse_profile().makeGetters(node_as_null_check.checked ? {node: ethers.ZeroHash} : {name: name_norm});
+function can_proto(func = func_select.value) {
+	switch (func_select.value) {
+		case FUNC_CALLDATA:
+		case FUNC_ENSIP10: return true;
+		default: return false;
+	}
+}
+
+function make_getters(name) {
+	return parse_profile().makeGetters(node_as_null_check.checked ? {node: ethers.ZeroHash} : {name: name.norm});
 }
 
 function make_calldata() {
@@ -1221,21 +1363,26 @@ function make_calldata() {
 		return abi.encodeFunctionData(abi_func, abi_func.inputs.map((param, i) => {
 			return parse_type(param, abi_fields[i].querySelector('input').value.trim());
 		}));
+	} else if (func_select.value === FUNC_URG) {
+		return URG_ABI.encodeFunctionData('proveRequest', [parse_urg_context(), [urg_ta.value]]);
+	} else if (func_select.value === FUNC_DNS) {
+		return DNS_ABI.encodeFunctionData('resolve', [parse_name(dns_name_field, dns_name_status).dns, 16]);
 	} else if (func_select.value === FUNC_CALLDATA) {
 		return calldata_ta.value.trim();
 	} else if (func_select.value === FUNC_BATCH) {
 		let batches = get_batches().map(parse_batch);
 		return BATCH_ABI.encodeFunctionData('query', [batches.map(x => [x.address, x.endpoints, x.calldata])]);
 	} else {
-		const calls = make_getters();
+		const name = parse_name();
+		const calls = make_getters(name);
 		if (!calls.length) {
-			return RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, '0x12345678']);
+			return RESOLVE_ABI.encodeFunctionData('resolve', [name.dns, '0x12345678']);
 		} else if (calls.length == 1) {
-			return RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, calls[0]]);
+			return RESOLVE_ABI.encodeFunctionData('resolve', [name.dns, calls[0]]);
 		} else if (multi_select.value == 'outer') {
-			return RESOLVE_ABI.encodeFunctionData('multicall', [calls.map(call => RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, call]))]);
+			return RESOLVE_ABI.encodeFunctionData('multicall', [calls.map(call => RESOLVE_ABI.encodeFunctionData('resolve', [name.dns, call]))]);
 		} else {
-			return RESOLVE_ABI.encodeFunctionData('resolve', [name_dns, RESOLVE_ABI.encodeFunctionData('multicall', [calls])]);
+			return RESOLVE_ABI.encodeFunctionData('resolve', [name.dns, RESOLVE_ABI.encodeFunctionData('multicall', [calls])]);
 		}
 	}
 }
@@ -1243,7 +1390,7 @@ function make_calldata() {
 function set_working(b) {
 	main_spinner.classList.toggle('hide', !b);
 	start_btn.classList.toggle('hide', b);
-	data_btn.classList.toggle('hide', b);
+	make_calldata_btn.classList.toggle('hide', b);
 	stop_btn.classList.toggle('hide', !b);
 	proto_select.disabled = b;
 	func_select.disabled = b;	
@@ -1309,8 +1456,9 @@ async function try_call() {
 			if (response) {
 				add_tag(row2, create_tag('Data Payload', create_copy_btn(response)));
 			}
-			if (proto_select.value === 'tor') {
-				let [sig, exp, signed_response] = ethers.AbiCoder.defaultAbiCoder().decode(['bytes', 'uint64', 'bytes'], response);
+			const proto = can_proto() ? proto_select.value : 'raw';
+			if (proto === 'tor') {
+				let [sig, exp, signed_response] = ABI_CODER.decode(['bytes', 'uint64', 'bytes'], response);
 				let signed_response_hash = ethers.keccak256(signed_response);
 				let hash = ethers.solidityPackedKeccak256(
 					['address', 'uint64', 'bytes32', 'bytes32'],
@@ -1320,8 +1468,8 @@ async function try_call() {
 				let signed = ethers.recoverAddress(hash, sig);
 				create_signed_row({signed, signed_response, signed_response_hash});
 				response = signed_response;
-			} else if (proto_select.value === 'ens') {
-				let [signed_response, exp, sig] = ethers.AbiCoder.defaultAbiCoder().decode(['bytes', 'uint64', 'bytes'], response);
+			} else if (proto === 'ens') {
+				let [signed_response, exp, sig] = ABI_CODER.decode(['bytes', 'uint64', 'bytes'], response);
 				let signed_response_hash = ethers.keccak256(signed_response);
 				let hash = ethers.solidityPackedKeccak256(
 					['bytes', 'address', 'uint64', 'bytes32', 'bytes32'], 
@@ -1450,6 +1598,74 @@ async function try_call() {
 				} catch (err) {
 					append_error(err, 'ABI Decode Error');
 				}
+			} else if (func_select.value === FUNC_DNS) {
+				const DNS_TYPES = {
+					16: 'TXT'
+				};
+				try {
+					let [rrs] = DNS_ABI.decodeFunctionResult('resolve', response);
+					if (rrs.length == 1 && rrs[0][0] === '0x') rrs = [];
+					const row0 = create_log({title: '🔬️ ABI Decoded Response'});
+					add_tag(row0, create_tag('RRsets', rrs.length));
+					output_div.append(row0);
+					rrs.forEach(([rrset, sig], i) => {
+						const row = create_log({time: `#${i+1}`});
+						output_div.append(row);
+						try {
+							const v = ethers.getBytes(rrset);
+							const dv = new DataView(v.buffer, v.byteOffset, v.byteLength);
+							let pos = 0;
+							const rrtype = dv.getUint16(pos); pos += 2;
+							const algorithm = v[pos++];
+							const labelCount = v[pos++];
+							const rrttl = dv.getUint32(pos); pos += 4;
+							const expiration = dv.getUint32(pos); pos += 4;
+							const inception = dv.getUint32(pos); pos += 4;
+							const keytag = dv.getUint16(pos); pos += 2;
+							let signerName;
+							[signerName, pos] = read_rr_chunks(v, pos);
+							add_tag(row, create('span', {className: 'tag primary', innerText: signerName || "<root>"}));
+							let typeName = DNS_TYPES[rrtype];
+							const typeTag = create_tag("Type", typeName ? `${typeName} (${rrtype})` : rrtype);
+							add_tag(row, typeTag);
+							add_tag(row, create_tag("Algorithm", algorithm));
+							add_tag(row, create_tag("TTL", format_dur(rrttl)));
+							add_tag(row, create_tag("Inception", new Date(inception * 1000).toLocaleDateString()));
+							add_tag(row, create_tag("Expires", new Date(expiration * 1000).toLocaleDateString()));
+							add_tag(row, create_tag("Keytag", keytag));
+							const records = [];
+							while (pos < v.length) {
+								let name;
+								[name, pos] = read_rr_chunks(v, pos);
+								const type = dv.getUint16(pos); pos += 2;
+								const cls = dv.getUint16(pos); pos += 2;
+								let ttl = dv.getUint32(pos); pos += 4;
+								const size = dv.getUint16(pos); pos += 2;
+								const data = v.subarray(pos, pos += size);
+								const info = {};
+								records.push(info);
+								if (cls !== 1) info.class = cls;
+								if (name !== signerName) info.name = name;
+								if (ttl !== rrttl) info.ttl = ttl;
+								if (type !== rrtype) info.type = type;
+								if (cls === 1 && type === 16) {
+									typeTag.classList.add('http');
+									info.txt = read_rr_chunks(data, 0, '');
+								} else {
+									info.data = ethers.hexlify(data);
+								}
+							}
+							output_div.append(create_pre_json(records));
+						} catch (err) {
+							row.classList.add(status_class(false));
+							append_error(err);
+						}
+						add_tag(row, create_tag('RRset', create_copy_btn(rrset)));
+						add_tag(row, create_tag('Signature', create_copy_btn(sig)));
+					});
+				} catch (err) {
+					append_error(err, 'ABI Decode Error');
+				}
 			}
 		} else {
 			append_error(message, 'CCIP-Read Error');
@@ -1462,6 +1678,16 @@ async function try_call() {
 	output_div.append(row);
 	set_working(false);
 	aborter = null;
+}
+
+function read_rr_chunks(v, off, sep = '.') {
+	const labels = [];
+	while (true) {
+		const n = v[off++];
+		if (!n) break;
+		labels.push(ethers.toUtf8String(v.subarray(off, off += n)));
+	}
+	return [labels.join(sep), off];
 }
 
 function create_proto_row({kind, hash, sig, exp}) {
@@ -1697,6 +1923,16 @@ function parse_profile() {
 	return profile;
 }
 
+function parse_urg_context() {
+	let context = urg_context_field.value.trim();
+	if (/^\d+$/.test(context)) {
+		context = ABI_CODER.encode(['uint256'], [BigInt(context)]);
+	}
+	if (ethers.isHexString(context)) {
+		return context;
+	}
+}
+
 function parse_coin(s) {
 	if (!s) {
 		return;
@@ -1781,7 +2017,7 @@ function create_tag(key, value, cls) {
 	} else if (value === undefined) {
 		tag.append(create('span', {className: 'value null', innerText: '«null»'}));
 	} else {
-		tag.append(create('span', {className: 'value', innerText: value}));
+		tag.append(create('span', {className: 'value', innerText: String(value)}));
 	}
 	return tag;
 }

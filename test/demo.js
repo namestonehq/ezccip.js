@@ -32,6 +32,7 @@ ezccip.enableENSIP10(async (name, context) => {
 				case 'notice': return new Date().toLocaleString();
 				case 'description': return `Connection from ${context.ip}`;
 				case 'avatar': return 'https://raffy.xyz/ens.jpg';
+				case 'url': return 'https://github.com/namestonehq/ezccip.js';
 				case 'location': return `Protocol(${context.protocol}) Sender(${context.sender})`;
 			}
 		},
