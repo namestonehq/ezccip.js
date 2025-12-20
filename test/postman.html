@@ -1653,7 +1653,7 @@ async function try_call() {
 								if (type !== rrtype) info.type = type;
 								if (cls === 1 && type === 16) {
 									typeTag.classList.add('http');
-									info.txt = read_rr_chunks(data, 0, '');
+									[info.txt] = read_rr_chunks(data, 0, '');
 								} else {
 									info.data = ethers.hexlify(data);
 								}
