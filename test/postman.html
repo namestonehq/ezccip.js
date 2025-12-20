@@ -520,12 +520,16 @@ footer {
 	</div>
 	<div id="options">
 		<select id="func_select">
-			<option value="ensip10">ENSIP-10: resolve(name, ...)</option>
-			<option value="abi">Function ABI</option>
-			<option value="calldata">Raw Calldata</option>
-			<option value="batch">Batch Gateway</option>
-			<option value="dns">DNSSEC Oracle</option>
-			<option value="urg">Unruggable Gateway</option>
+			<optgroup label="Application">
+				<option value="ensip10">ENSIP-10: resolve(name, ...)</option>
+				<option value="batch">Batch Gateway</option>
+				<option value="dns">DNSSEC Oracle</option>
+				<option value="urg">Unruggable Gateway</option>
+			</group>
+			<optgroup label="Protocol">
+				<option value="abi">Function ABI</option>
+				<option value="calldata">Raw Calldata</option>	
+			</optgroup>
 		</select>
 	</div>
 	<div id="ensip10" class="rows hide">
@@ -617,7 +621,7 @@ footer {
 		<div id="spinner" class="spinner hide"></div>
 		<button id="copy_link_btn" style="margin-left: auto">🔗️ Copy Link</button>
 		<button id="make_calldata_btn">✏️ Calldata</button>
-		<button id="calldataify_btn">🔀️ Render</button>
+		<button id="to_calldata_btn">🔀️ Render</button>
 		<button id="start_btn" disabled>⚡️ Call</button>
 		<button id="stop_btn" class="hide">🛑️ Stop</button>
 	</div>
@@ -709,7 +713,7 @@ const start_btn = document.getElementById('start_btn');
 const copy_link_btn = document.getElementById('copy_link_btn');
 const stop_btn = document.getElementById('stop_btn');
 const make_calldata_btn = document.getElementById('make_calldata_btn');
-const calldataify_btn = document.getElementById('calldataify_btn');
+const to_calldata_btn = document.getElementById('to_calldata_btn');
 const ensip10_div = document.getElementById('ensip10');
 const name_field = document.getElementById('name_field');
 const resolve_btn = document.getElementById('resolve_btn');
@@ -854,7 +858,9 @@ stop_btn.addEventListener('click', () => {
 	aborter.abort();
 	stop_btn.disabled = true;
 });
-calldataify_btn.addEventListener('click', () => {
+to_calldata_btn.addEventListener('click', () => {
+	endpoint_field.value = endpoint;
+	if (!can_proto()) proto_select.value = 'raw';
 	calldata_ta.value = make_calldata();
 	func_select.value = FUNC_CALLDATA;
 	update_ux();
@@ -1267,7 +1273,7 @@ function update_ux() {
 	urg_div.classList.toggle('hide',      func !== FUNC_URG);
 	dns_div.classList.toggle('hide',      func !== FUNC_DNS);
 
-	calldataify_btn.classList.toggle('hide', func == FUNC_CALLDATA);
+	to_calldata_btn.classList.toggle('hide', func == FUNC_CALLDATA);
 
 	let ok = true;
 	
@@ -1326,11 +1332,11 @@ function update_ux() {
 		to_batch_btn.disabled = !ok;
 		if (node_as_null_check.checked) json.null = 1;
 	}
-	proto_div.classList.add('hide', !can_proto(func));
+	proto_div.classList.toggle('hide', !can_proto(func));
 	start_btn.classList.toggle('unsupported', show_unknown);
 
 	make_calldata_btn.disabled = !ok;
-	calldataify_btn.disabled = !ok;
+	to_calldata_btn.disabled = !ok;
 	parse_endpoint(endpoint0);
 	if (!endpoint) ok = false;
 	parse_sender();
@@ -1350,7 +1356,8 @@ function update_ux() {
 }
 
 function can_proto(func = func_select.value) {
-	switch (func_select.value) {
+	switch (func) {
+		case FUNC_ABI:
 		case FUNC_CALLDATA:
 		case FUNC_ENSIP10: return true;
 		default: return false;
