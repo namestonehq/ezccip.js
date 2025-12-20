@@ -918,8 +918,11 @@ copy_link_btn.addEventListener('click', () => {
 for (let f of [endpoint_field, sender_field, name_field, dns_name_field]) {
 	f.addEventListener('keydown', e => {
 		if (e.key === 'Enter') {
-			start_btn.click();
-			stop_btn.click();
+			if (aborter) {	
+				stop_btn.click();
+			} else {
+				start_btn.click();
+			}
 		}
 	});
 }
