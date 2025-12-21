@@ -336,9 +336,9 @@ textarea {
 	font: bold 12px sans-serif;
 	background-color: #ffc;
 }
-#output .tag.selector {
-	font: 12px monospace;
-	background-color: #ffe;
+#output .tag.dns {
+	font: bold 12px monospace;
+	background-color: #cff;
 }
 #output .tag.record {
 	border: none;
@@ -522,9 +522,9 @@ footer {
 		<select id="func_select">
 			<optgroup label="Application">
 				<option value="ensip10">ENSIP-10: resolve(name, ...)</option>
-				<option value="batch">Batch Gateway</option>
-				<option value="dns">DNSSEC Oracle</option>
-				<option value="urg">Unruggable Gateway</option>
+				<option value="dns">DNSSEC Oracle: resolve(name, dnstype)</option>
+				<option value="urg">Unruggable Gateway: proveRequest(request)</option>
+				<option value="batch">Batch Gateway: query(request[])</option>
 			</group>
 			<optgroup label="Protocol">
 				<option value="abi">Function ABI</option>
@@ -576,7 +576,7 @@ footer {
 				<i id="calldata_status"></i>
 				<button id="calldata_btn">🔍️ Lookup</button>
 			</div>
-			<textarea id="calldata_ta" rows="8" placeholder="0x12345678..."></textarea>
+			<textarea id="calldata_ta" rows="20" placeholder="0x12345678..."></textarea>
 		</div>
 	</div>
 	<div id="batch" class="rows hide">
@@ -619,9 +619,9 @@ footer {
 	</div>
 	<div id="actions" class="row">
 		<div id="spinner" class="spinner hide"></div>
-		<button id="copy_link_btn" style="margin-left: auto">🔗️ Copy Link</button>
-		<button id="make_calldata_btn">✏️ Calldata</button>
-		<button id="to_calldata_btn">🔀️ Render</button>
+		<button id="copy_link_btn" style="margin-left: auto" title="Copy link that resolves on load">🔗️ Copy Link</button>
+		<button id="make_calldata_btn" title="Show calldata for current operation">✏️ Calldata</button>
+		<button id="to_calldata_btn" title="Convert to calldata">🔍️ Data</button>
 		<button id="start_btn" disabled>⚡️ Call</button>
 		<button id="stop_btn" class="hide">🛑️ Stop</button>
 	</div>
@@ -787,6 +787,7 @@ urg_gateway_btn.addEventListener('click', async () => {
 			commitIndex = commitIndex.value;
 		}
 		urg_context_field.value = commitIndex;
+		update_ux();
 	} catch (err) {
 		window.alert(String(err));
 	}
@@ -1274,14 +1275,18 @@ function update_ux() {
 	dns_div.classList.toggle('hide',      func !== FUNC_DNS);
 
 	to_calldata_btn.classList.toggle('hide', func == FUNC_CALLDATA);
+	make_calldata_btn.classList.toggle('hide', func == FUNC_CALLDATA);
 
 	let ok = true;
 	
 	let json = {
 		endpoint: endpoint_field.value,
 		sender: sender_field.value,
-		proto: proto_select.value
 	};
+
+	if (can_proto(func)) {
+		json.proto = proto_select.value;
+	}
 
 	let show_unknown = false;
 	let endpoint0;
@@ -1376,7 +1381,7 @@ function make_calldata() {
 	} else if (func_select.value === FUNC_URG) {
 		return URG_ABI.encodeFunctionData('proveRequest', [parse_urg_context(), [urg_ta.value]]);
 	} else if (func_select.value === FUNC_DNS) {
-		return DNS_ABI.encodeFunctionData('resolve', [parse_name(dns_name_field, dns_name_status).dns, 16]);
+		return DNS_ABI.encodeFunctionData('resolve', [parse_name().dns, 16]);
 	} else if (func_select.value === FUNC_CALLDATA) {
 		return calldata_ta.value.trim();
 	} else if (func_select.value === FUNC_BATCH) {
@@ -1610,7 +1615,9 @@ async function try_call() {
 				}
 			} else if (func_select.value === FUNC_DNS) {
 				const DNS_TYPES = {
-					16: 'TXT'
+					16: 'TXT',
+					43: 'DS',
+					48: 'DNSKEY'
 				};
 				try {
 					let [rrs] = DNS_ABI.decodeFunctionResult('resolve', response);
@@ -1619,7 +1626,7 @@ async function try_call() {
 					add_tag(row0, create_tag('RRsets', rrs.length));
 					output_div.append(row0);
 					rrs.forEach(([rrset, sig], i) => {
-						const row = create_log({time: `#${i+1}`});
+						const row = create_log({time: `RRset #${i+1}`});
 						output_div.append(row);
 						try {
 							const v = ethers.getBytes(rrset);
@@ -1634,7 +1641,7 @@ async function try_call() {
 							const keytag = dv.getUint16(pos); pos += 2;
 							let signerName;
 							[signerName, pos] = read_rr_chunks(v, pos);
-							add_tag(row, create('span', {className: 'tag primary', innerText: signerName || "<root>"}));
+							add_tag(row, create('span', {className: 'tag dns', innerText: signerName || "<root>"}));
 							let typeName = DNS_TYPES[rrtype];
 							const typeTag = create_tag("Type", typeName ? `${typeName} (${rrtype})` : rrtype);
 							add_tag(row, typeTag);
