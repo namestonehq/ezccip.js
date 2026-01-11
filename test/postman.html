@@ -620,8 +620,8 @@ footer {
 	<div id="actions" class="row">
 		<div id="spinner" class="spinner hide"></div>
 		<button id="copy_link_btn" style="margin-left: auto" title="Copy link that resolves on load">🔗️ Copy Link</button>
+		<button id="to_calldata_btn" title="Convert to calldata">🤖️ Convert</button>
 		<button id="make_calldata_btn" title="Show calldata for current operation">✏️ Calldata</button>
-		<button id="to_calldata_btn" title="Convert to calldata">🔍️ Data</button>
 		<button id="start_btn" disabled>⚡️ Call</button>
 		<button id="stop_btn" class="hide">🛑️ Stop</button>
 	</div>
@@ -1234,28 +1234,26 @@ function parse_name() {
 
 function parse_type(param, input) {
 	// TODO: make this less shit
-	switch (param.type) {
-		case 'boolean': return parse_as_json(input, 'boolean');
-		case 'string':  return parse_as_json(input, 'string');
-		case 'bytes': return ethers.hexlify(input);
-	}
+	const trim = input.trim();
 	let match;
 	if (match = param.type.match(/^bytes(\d+)$/)) {
-		return ethers.zeroPadBytes(input, parseInt(match[1]));
+		return ethers.zeroPadBytes(trim, parseInt(match[1]));
+	} else if (param.type.startsWith('uint')) {
+		return BigInt(trim);
 	}
-	if (param.type.startsWith('uint')) {
-		return BigInt(input);
-	}
-}
-function parse_as_json(input, type, test) {
-	try {
-		let value = JSON.parse(input);
-		if (test ? test(value) : typeof value === type) {
-			return value;
+	switch (param.type) {
+		case 'boolean': {
+			if (/^true$/i.test(trim)) return true;
+			if (/^false$/i.test(trim)) return false;
+			break;
 		}
-	} catch (err) {	
+		case 'string': return input;
+		case 'bytes': {
+			if (!trim) return "0x";
+			return ethers.hexlify(trim);
+		}
 	}
-	throw new Error(`expected ${type}: "${input}"`);
+	throw new Error(`expected ${param.type}: "${input}"`);
 }
 
 function update_ux_soon() {
