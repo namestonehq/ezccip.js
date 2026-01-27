@@ -1069,6 +1069,7 @@ function load_config(json) {
 		delete_batches();
 		json.batches?.forEach(add_batch);
 	} else if (type === FUNC_URG) {
+		urg_context_field.value = json.context || '';
 		urg_ta.value = json.request || '';
 	} else if (type === FUNC_DNS) {
 		dns_name_field.value = json.dns || '';
